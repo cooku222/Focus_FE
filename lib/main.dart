@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:focus/screens/login.dart'; // Login 페이지 임포트
 import 'package:focus/screens/register.dart'; // Register 페이지 임포트
+import 'package:focus/screens/planner.dart'; // Planner 페이지 임포트
 
 void main() {
   runApp(MyApp());
@@ -67,6 +68,12 @@ class _MainScreenState extends State<MainScreen> {
             children: [
               // 헤더
               Header(
+                onPlannerTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PlannerScreen()),
+                  );
+                },
                 onLoginTap: () {
                   Navigator.push(
                     context,
@@ -275,10 +282,15 @@ class _MainScreenState extends State<MainScreen> {
 
 // 헤더 UI
 class Header extends StatelessWidget {
+  final VoidCallback onPlannerTap;
   final VoidCallback onLoginTap;
   final VoidCallback onRegisterTap;
 
-  const Header({required this.onLoginTap, required this.onRegisterTap});
+  const Header({
+    required this.onPlannerTap,
+    required this.onLoginTap,
+    required this.onRegisterTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +313,10 @@ class Header extends StatelessWidget {
           ),
           Row(
             children: [
-              _HeaderTextButton(text: "플래너"),
+              GestureDetector(
+                onTap: onPlannerTap,
+                child: _HeaderTextButton(text: "플래너"),
+              ),
               _HeaderTextButton(text: "리포트"),
               _HeaderTextButton(text: "챌린지"),
               _HeaderTextButton(text: "마이페이지"),

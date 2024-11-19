@@ -1,6 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:focus/main.dart'; // 메인 화면으로 돌아가기 위해 main.dart를 임포트
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  // 임시로 하드 코딩된 로그인 데이터
+  final String correctEmail = "admin@test.ac.kr";
+  final String correctPassword = "admin";
+
+  void handleLogin() {
+    String email = emailController.text;
+    String password = passwordController.text;
+
+    if (email == correctEmail && password == correctPassword) {
+      // 로그인 성공
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen()),
+            (route) => false, // 이전 화면을 모두 제거
+      );
+    } else {
+      // 로그인 실패
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("로그인 실패"),
+          content: Text("이메일 또는 비밀번호가 올바르지 않습니다."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("확인"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,6 +98,7 @@ class LoginScreen extends StatelessWidget {
                       ),
                       padding: EdgeInsets.symmetric(horizontal: 8.0),
                       child: TextField(
+                        controller: emailController,
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           hintText: "이메일을 입력하세요",
@@ -81,6 +124,7 @@ class LoginScreen extends StatelessWidget {
                       ),
                       padding: EdgeInsets.symmetric(horizontal: 8.0),
                       child: TextField(
+                        controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
                           border: InputBorder.none,
@@ -91,21 +135,24 @@ class LoginScreen extends StatelessWidget {
                     SizedBox(height: 55), // 간격
                     // 로그인 버튼
                     Center(
-                      child: Container(
-                        width: double.infinity,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Color(0x80327B9E), // 투명도 50%
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "로그인",
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w400,
-                              fontFamily: "Inter",
-                              color: Colors.black,
+                      child: GestureDetector(
+                        onTap: handleLogin,
+                        child: Container(
+                          width: double.infinity,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Color(0x80327B9E), // 투명도 50%
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "로그인",
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w400,
+                                fontFamily: "Inter",
+                                color: Colors.black,
+                              ),
                             ),
                           ),
                         ),
@@ -145,7 +192,7 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-// 헤더 UI
+// 헤더 UI (기존과 동일)
 class Header extends StatelessWidget {
   final VoidCallback onLoginTap;
 
