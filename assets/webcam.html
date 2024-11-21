@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Viewer</title>
+</head>
+<body>
+<h1>Webcam Feed</h1>
+<video id="webcam" autoplay playsinline width="640" height="480"></video>
+<script>
+    async function startWebcam() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const videoElement = document.getElementById('webcam');
+            videoElement.srcObject = stream;
+        } catch (error) {
+            console.error('Error accessing webcam:', error);
+            alert('Webcam access denied or not available.');
+        }
+    }
+
+    window.onload = startWebcam;
+</script>
+</body>
+</html>

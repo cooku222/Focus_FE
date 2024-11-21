@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:focus/widgets/header.dart'; // Header 추가
 import 'package:table_calendar/table_calendar.dart';
 
 class PlannerScreen extends StatefulWidget {
@@ -9,10 +10,12 @@ class PlannerScreen extends StatefulWidget {
 }
 
 class _PlannerScreenState extends State<PlannerScreen> {
-  DateTime _focusedDay = DateTime.now(); // 오늘 날짜
-  DateTime? _selectedDay; // 선택한 날짜
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
 
-  final List<Map<String, dynamic>> _tasks = []; // 할 일 목록
+  // 날짜별로 할 일 목록 관리
+  Map<DateTime, List<Map<String, dynamic>>> _tasksByDate = {};
+
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _taskController = TextEditingController();
 
@@ -23,25 +26,44 @@ class _PlannerScreenState extends State<PlannerScreen> {
     super.dispose();
   }
 
-  void _addTask() {
-    setState(() {
-      if (_subjectController.text.isNotEmpty &&
-          _taskController.text.isNotEmpty) {
-        _tasks.add({
-          "subject": _subjectController.text,
-          "task": _taskController.text,
-          "completed": false,
-        });
-        _subjectController.clear();
-        _taskController.clear();
-      }
-    });
+  // 선택된 날짜의 할 일 목록 가져오기
+  List<Map<String, dynamic>> get _tasksForSelectedDate {
+    if (_selectedDay != null) {
+      final selectedDate = DateTime(
+        _selectedDay!.year,
+        _selectedDay!.month,
+        _selectedDay!.day,
+      );
+      return _tasksByDate[selectedDate] ?? [];
+    }
+    return [];
   }
 
-  void _updateTaskStatus(int index, bool? value) {
-    setState(() {
-      _tasks[index]["completed"] = value ?? false;
-    });
+  void _addTask() {
+    if (_subjectController.text.isNotEmpty && _taskController.text.isNotEmpty) {
+      setState(() {
+        if (_selectedDay != null) {
+          final selectedDate = DateTime(
+            _selectedDay!.year,
+            _selectedDay!.month,
+            _selectedDay!.day,
+          );
+
+          if (_tasksByDate[selectedDate] == null) {
+            _tasksByDate[selectedDate] = [];
+          }
+
+          _tasksByDate[selectedDate]?.add({
+            "subject": _subjectController.text,
+            "task": _taskController.text,
+            "completed": false,
+          });
+
+          _subjectController.clear();
+          _taskController.clear();
+        }
+      });
+    }
   }
 
   @override
@@ -52,7 +74,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 헤더
             Header(),
             SizedBox(height: 16),
             Padding(
@@ -68,13 +89,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
               ),
             ),
             SizedBox(height: 16),
-            // 달력과 체크리스트
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 좌측: 달력
                   Expanded(
                     flex: 2,
                     child: TableCalendar(
@@ -102,12 +121,10 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     ),
                   ),
                   SizedBox(width: 16),
-                  // 우측: 체크리스트
                   Expanded(
                     flex: 3,
                     child: Column(
                       children: [
-                        // 입력 폼
                         Row(
                           children: [
                             Expanded(
@@ -149,7 +166,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           ),
                         ),
                         SizedBox(height: 16),
-                        // 체크리스트
                         Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
@@ -159,9 +175,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           child: ListView.builder(
                             shrinkWrap: true,
                             physics: NeverScrollableScrollPhysics(),
-                            itemCount: _tasks.length,
+                            itemCount: _tasksForSelectedDate.length,
                             itemBuilder: (context, index) {
-                              var task = _tasks[index];
+                              var task = _tasksForSelectedDate[index];
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8.0,
@@ -169,7 +185,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    // 과목 원형 표시
                                     Container(
                                       width: 32,
                                       height: 32,
@@ -179,7 +194,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                       ),
                                       child: Center(
                                         child: Text(
-                                          task["subject"][0], // 과목의 첫 글자
+                                          task["subject"][0],
                                           style: TextStyle(
                                             color: Color(0xFF4F378A),
                                             fontSize: 16,
@@ -189,7 +204,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                       ),
                                     ),
                                     SizedBox(width: 12),
-                                    // 과목 이름과 할 일
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
@@ -213,11 +227,12 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                         ],
                                       ),
                                     ),
-                                    // 체크박스
                                     Checkbox(
                                       value: task["completed"],
                                       onChanged: (value) =>
-                                          _updateTaskStatus(index, value),
+                                          setState(() {
+                                            task["completed"] = value ?? false;
+                                          }),
                                     ),
                                   ],
                                 ),
@@ -236,88 +251,4 @@ class _PlannerScreenState extends State<PlannerScreen> {
       ),
     );
   }
-}
-
-// 헤더 위젯
-class Header extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 118,
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "FOCUS",
-            style: TextStyle(
-              fontSize: 48,
-              height: 1.25,
-              color: Color(0xFF123456),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Row(
-            children: [
-              Text(
-                "플래너",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold, // 플래너 bold 처리
-                  color: Color(0xFF123456),
-                ),
-              ),
-              SizedBox(width: 16),
-              Text("리포트", style: _headerTextStyle),
-              SizedBox(width: 16),
-              Text("챌린지", style: _headerTextStyle),
-              SizedBox(width: 16),
-              Text("마이페이지", style: _headerTextStyle),
-              SizedBox(width: 16),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF8AD2E6),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  "Login",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF123456),
-                  ),
-                ),
-              ),
-              SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF123456),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  "Register",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  TextStyle get _headerTextStyle => TextStyle(
-    fontSize: 16,
-    color: Color(0xFF123456),
-  );
 }
