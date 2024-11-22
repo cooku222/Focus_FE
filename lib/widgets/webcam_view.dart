@@ -3,27 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
-class WebcamView extends StatefulWidget {
-  const WebcamView({Key? key}) : super(key: key);
+class WebcamView extends StatelessWidget {
+  final ui.VoidCallback? onCameraAllowed; // 카메라 활성화 콜백
 
-  @override
-  State<WebcamView> createState() => _WebcamViewState();
-}
-
-class _WebcamViewState extends State<WebcamView> {
-  @override
-  void initState() {
-    super.initState();
-    if (kIsWeb) {
-      // 웹에서 'webcam'이라는 이름으로 HTML 뷰를 등록
-      ui.platformViewRegistry.registerViewFactory(
-        'webcam-view',
-            (int viewId) => IFrameElement()
-          ..src = 'assets/webcam.html' // HTML 파일 경로
-          ..style.border = 'none',
-      );
-    }
-  }
+  const WebcamView({Key? key, this.onCameraAllowed}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +16,26 @@ class _WebcamViewState extends State<WebcamView> {
       );
     }
 
+    // 웹에서 'webcam'이라는 이름으로 HTML 뷰를 등록
+    ui.platformViewRegistry.registerViewFactory(
+      'webcam-view',
+          (int viewId) {
+        final iframe = IFrameElement()
+          ..src = 'assets/webcam.html' // HTML 파일 경로
+          ..style.border = 'none';
+
+        iframe.onLoad.listen((event) {
+          // 카메라 활성화 시 콜백 호출
+          if (onCameraAllowed != null) {
+            onCameraAllowed!();
+          }
+        });
+
+        return iframe;
+      },
+    );
+
     return const HtmlElementView(viewType: 'webcam-view');
   }
 }
+

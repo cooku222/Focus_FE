@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:focus/screens/info1.dart'; // Info1 화면을 import
+import 'package:focus/widgets/header.dart'; // Header 위젯 경로 임포트
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -28,6 +30,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() {
       isPasswordMatch = passwordController.text == confirmPasswordController.text;
     });
+  }
+
+  void _register() {
+    final email = emailController.text.trim();
+    final nickname = nicknameController.text.trim();
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
+
+    if (email.isEmpty || nickname.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('모든 필드를 입력하세요.')),
+      );
+      return;
+    }
+
+    if (!isPasswordMatch) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('비밀번호가 일치하지 않습니다.')),
+      );
+      return;
+    }
+
+    // 회원가입 성공 로직 처리 후 페이지 이동
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const Info1Screen()),
+    );
   }
 
   @override
@@ -124,21 +153,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     SizedBox(height: 55), // 간격
                     // 회원가입 버튼
                     Center(
-                      child: Container(
-                        width: 737,
-                        height: 75,
-                        decoration: BoxDecoration(
-                          color: Color(0x80327B9E), // 투명도 50%
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "회원가입",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontFamily: "Noto Sans",
-                              fontWeight: FontWeight.w400,
-                              color: Colors.black,
+                      child: GestureDetector(
+                        onTap: _register,
+                        child: Container(
+                          width: 737,
+                          height: 75,
+                          decoration: BoxDecoration(
+                            color: Color(0x80327B9E), // 투명도 50%
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "회원가입",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: "Noto Sans",
+                                fontWeight: FontWeight.w400,
+                                color: Colors.black,
+                              ),
                             ),
                           ),
                         ),
@@ -266,110 +298,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ],
-    );
-  }
-}
-
-// 헤더 위젯
-class Header extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 118,
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "FOCUS",
-            style: TextStyle(
-              fontSize: 48,
-              height: 1.25,
-              color: Color(0xFF123456),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Row(
-            children: [
-              _HeaderTextButton(text: "플래너"),
-              _HeaderTextButton(text: "리포트"),
-              _HeaderTextButton(text: "챌린지"),
-              _HeaderTextButton(text: "마이페이지"),
-              SizedBox(width: 16),
-              _HeaderButton(
-                text: "Login",
-                borderColor: Color(0xFF123456),
-                backgroundColor: Color(0xFF8AD2E6),
-                textColor: Color(0xFF123456),
-              ),
-              SizedBox(width: 8),
-              _HeaderButton(
-                text: "Register",
-                borderColor: Color(0xFF123456),
-                backgroundColor: Color(0xFF123456),
-                textColor: Colors.white,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// 헤더 텍스트 버튼
-class _HeaderTextButton extends StatelessWidget {
-  final String text;
-
-  const _HeaderTextButton({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 16,
-          color: Color(0xFF123456),
-        ),
-      ),
-    );
-  }
-}
-
-// 헤더 버튼
-class _HeaderButton extends StatelessWidget {
-  final String text;
-  final Color borderColor;
-  final Color backgroundColor;
-  final Color textColor;
-
-  const _HeaderButton({
-    required this.text,
-    required this.borderColor,
-    required this.backgroundColor,
-    required this.textColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: borderColor, width: 1),
-      ),
-      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 14,
-          color: textColor,
-        ),
-      ),
     );
   }
 }

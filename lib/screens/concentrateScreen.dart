@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:focus/widgets/webcam_view.dart';
 
@@ -11,32 +10,41 @@ class ConcentrateScreen extends StatefulWidget {
 }
 
 class _ConcentrateScreenState extends State<ConcentrateScreen> {
-  late String _currentTime;
-  late String _currentDate;
-  late Duration _elapsedTime;
-  late DateTime _startTime;
+  String _currentTime = ""; // Initialize with an empty string
+  String _currentDate = ""; // Initialize with an empty string
+  Duration _elapsedTime = const Duration();
+  DateTime? _startTime; // Optional to handle null safely
   String _currentMode = "Check"; // "Check" or "Mode"
-  bool _isPaused = false; // Pause 상태
-  bool _isRecording = true; // 녹화 상태
+  bool _isPaused = false; // Pause state
+  bool _isRecording = false; // Recording state
 
-  late Timer _timer;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _startTime = DateTime.now();
-    _elapsedTime = const Duration();
-    _updateTime();
+    _currentTime = _getCurrentTime(); // Initialize current time
+    _currentDate = _getCurrentDate(); // Initialize current date
+  }
+
+  String _getCurrentTime() {
+    final now = DateTime.now();
+    return "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+  }
+
+  String _getCurrentDate() {
+    final now = DateTime.now();
+    return "${now.year}년 ${now.month}월 ${now.day}일 (${_weekdayToKorean(now.weekday)})";
   }
 
   void _updateTime() {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!_isPaused) {
+      if (!_isPaused && _startTime != null) {
         final now = DateTime.now();
         setState(() {
-          _currentTime = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
-          _currentDate = "${now.year}년 ${now.month}월 ${now.day}일 (${_weekdayToKorean(now.weekday)})";
-          _elapsedTime = now.difference(_startTime);
+          _currentTime = _getCurrentTime();
+          _currentDate = _getCurrentDate();
+          _elapsedTime = now.difference(_startTime!);
         });
       }
     });
@@ -57,29 +65,30 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     setState(() {
       _isPaused = !_isPaused;
       if (_isPaused) {
-        _timer.cancel();
+        _isRecording = false; // Stop recording
       } else {
-        _updateTime();
+        _isRecording = true; // Resume recording
       }
     });
   }
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final elapsedTimeStr =
-        "${_elapsedTime.inHours.toString().padLeft(2, '0')}시간 ${(_elapsedTime.inMinutes % 60).toString().padLeft(2, '0')}분 ${(_elapsedTime.inSeconds % 60).toString().padLeft(2, '0')}초";
+    final elapsedTimeStr = _startTime == null
+        ? "00시간 00분 00초"
+        : "${_elapsedTime.inHours.toString().padLeft(2, '0')}시간 ${(_elapsedTime.inMinutes % 60).toString().padLeft(2, '0')}분 ${(_elapsedTime.inSeconds % 60).toString().padLeft(2, '0')}초";
 
     return Scaffold(
       backgroundColor: const Color(0xFF242424),
       body: Stack(
         children: [
-          // 중앙 UI
+          // Central UI
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -120,14 +129,15 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                     SizedBox(
                       width: 428,
                       height: 241,
-                      child: _isPaused
-                          ? const Center(
-                        child: Text(
-                          "웹캠이 일시 중지되었습니다.",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
-                        ),
-                      )
-                          : const WebcamView(),
+                      child: WebcamView(
+                        onCameraAllowed: () {
+                          setState(() {
+                            _startTime = DateTime.now();
+                            _isRecording = true; // Start recording
+                            _updateTime();
+                          });
+                        },
+                      ),
                     ),
                     if (_isRecording)
                       Positioned(
@@ -153,14 +163,14 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
               ],
             ),
           ),
-          // 우측 버튼 영역
+          // Right-side button area
           Positioned(
-            right: 30, // 여백 추가
-            bottom: 90, // 여백 추가
+            right: 30,
+            bottom: 90,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // 집중 모드와 체크 토글
+                // Mode toggle
                 Container(
                   width: 248,
                   height: 88,
@@ -172,7 +182,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                     children: [
                       AnimatedPositioned(
                         duration: const Duration(milliseconds: 300),
-                        left: _currentMode == "Check" ? 0 : 131, // 버튼 이동
+                        left: _currentMode == "Check" ? 0 : 131,
                         child: Container(
                           width: 117,
                           height: 88,
@@ -199,7 +209,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Pause 버튼
+                // Pause button
                 ElevatedButton(
                   onPressed: _pauseWebcam,
                   style: ElevatedButton.styleFrom(
@@ -219,7 +229,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                // Exit 버튼
+                // Exit button
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
