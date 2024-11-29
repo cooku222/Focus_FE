@@ -4,12 +4,14 @@ class Header extends StatelessWidget {
   final VoidCallback? onPlannerTap;
   final VoidCallback? onLoginTap;
   final VoidCallback? onRegisterTap;
+  final VoidCallback? onMyPageTap; // 추가된 콜백
 
   const Header({
     Key? key,
     this.onPlannerTap,
     this.onLoginTap,
     this.onRegisterTap,
+    this.onMyPageTap, // 콜백 받기
   }) : super(key: key);
 
   @override
@@ -37,9 +39,11 @@ class Header extends StatelessWidget {
                 onTap: onPlannerTap,
                 child: const _HeaderTextButton(text: "플래너"),
               ),
-              const _HeaderTextButton(text: "리포트"),
-              const _HeaderTextButton(text: "챌린지"),
-              const _HeaderTextButton(text: "마이페이지"),
+              const _HeaderTextButton(text: "마이리포트"),
+              GestureDetector(
+                onTap: onMyPageTap, // 마이페이지 이동 연결
+                child: const _HeaderTextButton(text: "마이페이지"),
+              ),
               const SizedBox(width: 16),
               GestureDetector(
                 onTap: onLoginTap,

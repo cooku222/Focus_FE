@@ -27,7 +27,7 @@ class Info5Screen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "실시간 알림을 통해\n집중도 향상을\n도와줍니다.",
+                "플래너 기능을 통해\n오늘 공부할 양을 기록합니다.",
                 style: TextStyle(
                   fontSize: 40,
                   fontFamily: "Noto Sans",
@@ -39,7 +39,7 @@ class Info5Screen extends StatelessWidget {
               Align(
                 alignment: Alignment.bottomRight,
                 child: Image.asset(
-                  'assets/images/5.png',
+                  'assets/images/1.png',
                   width: 700,
                   height: 700,
                 ),

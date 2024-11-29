@@ -16,12 +16,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
   // 날짜별로 할 일 목록 관리
   Map<DateTime, List<Map<String, dynamic>>> _tasksByDate = {};
 
-  final TextEditingController _subjectController = TextEditingController();
+  String? _selectedSubject; // 드롭다운에서 선택된 과목
   final TextEditingController _taskController = TextEditingController();
+
+  final List<String> _subjects = ['수학', '영어', '과학', '국어']; // 예시 과목 리스트
 
   @override
   void dispose() {
-    _subjectController.dispose();
     _taskController.dispose();
     super.dispose();
   }
@@ -40,7 +41,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
   }
 
   void _addTask() {
-    if (_subjectController.text.isNotEmpty && _taskController.text.isNotEmpty) {
+    if (_selectedSubject != null && _taskController.text.isNotEmpty) {
       setState(() {
         if (_selectedDay != null) {
           final selectedDate = DateTime(
@@ -54,12 +55,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
           }
 
           _tasksByDate[selectedDate]?.add({
-            "subject": _subjectController.text,
+            "subject": _selectedSubject,
             "task": _taskController.text,
             "completed": false,
           });
 
-          _subjectController.clear();
           _taskController.clear();
         }
       });
@@ -75,9 +75,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Header(),
-            SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
                 "플래너",
                 style: TextStyle(
@@ -88,12 +88,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 캘린더
                   Expanded(
                     flex: 2,
                     child: TableCalendar(
@@ -108,7 +109,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           _focusedDay = focusedDay;
                         });
                       },
-                      calendarStyle: CalendarStyle(
+                      calendarStyle: const CalendarStyle(
                         todayDecoration: BoxDecoration(
                           color: Color(0xFF8AD2E6),
                           shape: BoxShape.circle,
@@ -120,44 +121,52 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
+                  // 드롭다운과 할 일 입력
                   Expanded(
                     flex: 3,
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _subjectController,
-                                decoration: InputDecoration(
-                                  labelText: "과목명 입력",
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: _taskController,
-                                decoration: InputDecoration(
-                                  labelText: "할 일 입력",
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                            ),
-                          ],
+                        // 드롭다운
+                        DropdownButtonFormField<String>(
+                          value: _selectedSubject,
+                          hint: const Text("과목을 선택하세요"),
+                          items: _subjects.map((subject) {
+                            return DropdownMenuItem<String>(
+                              value: subject,
+                              child: Text(subject),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedSubject = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: "과목 선택",
+                          ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
+                        // 할 일 입력 필드
+                        TextField(
+                          controller: _taskController,
+                          decoration: const InputDecoration(
+                            labelText: "할 일 입력",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // 추가 버튼
                         ElevatedButton(
                           onPressed: _addTask,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF8AD2E6),
+                            backgroundColor: const Color(0xFF8AD2E6),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: Text(
+                          child: const Text(
                             "추가",
                             style: TextStyle(
                               color: Colors.white,
@@ -165,16 +174,17 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             ),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
+                        // 할 일 목록
                         Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: Color(0xFFB6F9FF).withOpacity(0.24),
+                            color: const Color(0xFFB6F9FF).withOpacity(0.24),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: ListView.builder(
                             shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
+                            physics: const NeverScrollableScrollPhysics(),
                             itemCount: _tasksForSelectedDate.length,
                             itemBuilder: (context, index) {
                               var task = _tasksForSelectedDate[index];
@@ -188,14 +198,14 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                     Container(
                                       width: 32,
                                       height: 32,
-                                      decoration: BoxDecoration(
+                                      decoration: const BoxDecoration(
                                         color: Color(0xFF8AD2E6),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Center(
                                         child: Text(
                                           task["subject"][0],
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: Color(0xFF4F378A),
                                             fontSize: 16,
                                             fontWeight: FontWeight.w500,
@@ -203,7 +213,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                         ),
                                       ),
                                     ),
-                                    SizedBox(width: 12),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
@@ -211,7 +221,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                         children: [
                                           Text(
                                             task["subject"],
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 16,
                                               color: Colors.black,
                                               fontWeight: FontWeight.bold,
@@ -219,7 +229,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                           ),
                                           Text(
                                             task["task"],
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 16,
                                               color: Colors.black,
                                             ),
@@ -229,10 +239,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                     ),
                                     Checkbox(
                                       value: task["completed"],
-                                      onChanged: (value) =>
-                                          setState(() {
-                                            task["completed"] = value ?? false;
-                                          }),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          task["completed"] = value ?? false;
+                                        });
+                                      },
                                     ),
                                   ],
                                 ),

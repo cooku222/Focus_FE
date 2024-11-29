@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:focus/main.dart'; // 메인 화면으로 돌아가기 위해 main.dart를 임포트
 import 'package:focus/widgets/header.dart'; // Header 위젯 경로 임포트
 
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 

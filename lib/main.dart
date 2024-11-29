@@ -1,13 +1,24 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:focus/widgets/header.dart';
-import 'package:focus/screens/login.dart';
-import 'package:focus/screens/register.dart' as register;
-import 'package:focus/screens/planner.dart' as planner;
-import 'package:focus/screens/concentrateScreen.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+import 'package:flutter/material.dart';
+import 'package:focus/screens/errorScreen.dart';
+import 'package:focus/screens/login.dart';
+import 'package:focus/screens/register.dart';
+import 'package:focus/screens/info1.dart';
+import 'package:focus/screens/info2.dart';
+import 'package:focus/screens/info3.dart';
+import 'package:focus/screens/info4.dart';
+import 'package:focus/screens/info5.dart';
+import 'package:focus/screens/planner.dart';
+import 'package:focus/screens/waitingRoom.dart';
+import 'package:focus/screens/waitingRoom2.dart';
+import 'package:focus/screens/concentrateScreen.dart';
+import 'package:focus/screens/dailyReport.dart';
+import 'package:focus/widgets/header.dart';
+import 'package:focus/screens/myPage.dart';
+
+
+void main() {
   runApp(const MyApp());
 }
 
@@ -16,9 +27,31 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: MainScreen(),
+      initialRoute: '/', // 기본 경로
+      routes: {
+        '/': (context) => const MainScreen(), // 메인 화면
+        '/login': (context) => const LoginScreen(), // 로그인 화면
+        '/register': (context) => RegisterScreen(), // 회원가입 화면
+        '/register/info1': (context) => const Info1Screen(), // 회원가입 정보1
+        '/register/info2': (context) => const Info2Screen(), // 회원가입 정보2
+        '/register/info3': (context) => const Info3Screen(), // 회원가입 정보3
+        '/register/info4': (context) => const Info4Screen(), // 회원가입 정보4
+        '/register/info5': (context) => const Info5Screen(), // 회원가입 정보5
+        '/planner': (context) => const PlannerScreen(), // 플래너 화면
+        '/waitingRoom': (context) => const WaitingRoom(), // 대기실 화면
+        '/waitingRoom2': (context) => const WaitingRoom2(subheadings: [],), // 대기실 2 화면
+        '/concentrateScreen': (context) => const ConcentrateScreen(), // 집중 화면
+        '/dailyReport': (context) => const TableCalendarScreen(), // 일일 리포트 화면
+        '/myPage': (context) => const MyPageScreen(),
+      },
+      onUnknownRoute: (settings) {
+        // 잘못된 경로 처리
+        return MaterialPageRoute(
+          builder: (context) => const ErrorScreen(),
+        );
+      },
     );
   }
 }
@@ -77,7 +110,7 @@ class _MainScreenState extends State<MainScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const planner.PlannerScreen(),
+                      builder: (context) => const PlannerScreen(),
                     ),
                   );
                 },
@@ -93,7 +126,7 @@ class _MainScreenState extends State<MainScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => register.RegisterScreen(),
+                      builder: (context) => RegisterScreen(),
                     ),
                   );
                 },
@@ -121,7 +154,7 @@ class _MainScreenState extends State<MainScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const ConcentrateScreen(),
+                          builder: (context) => const WaitingRoom(), // WaitingRoom으로 이동
                         ),
                       );
                     },
@@ -340,7 +373,14 @@ class _TopBlock extends StatelessWidget {
           ),
           const SizedBox(height: 29),
           ElevatedButton(
-            onPressed: onMeasureTap,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const WaitingRoom(),
+                ),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4C9BB8),
               shape: RoundedRectangleBorder(
