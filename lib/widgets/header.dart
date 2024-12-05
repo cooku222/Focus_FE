@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 
 class Header extends StatelessWidget {
+  final String? title; // 추가된 title 파라미터
   final VoidCallback? onPlannerTap;
   final VoidCallback? onLoginTap;
   final VoidCallback? onRegisterTap;
-  final VoidCallback? onMyPageTap; // 추가된 콜백
+  final VoidCallback? onMyPageTap;
+  final VoidCallback? onMyReportTap; // 추가된 콜백
 
   const Header({
     Key? key,
+    this.title,
     this.onPlannerTap,
     this.onLoginTap,
     this.onRegisterTap,
-    this.onMyPageTap, // 콜백 받기
+    this.onMyPageTap,
+    this.onMyReportTap, // 콜백 받기
   }) : super(key: key);
 
   @override
@@ -24,8 +28,8 @@ class Header extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            "FOCUS",
+          Text(
+            title ?? "FOCUS",
             style: TextStyle(
               fontSize: 48,
               height: 1.25,
@@ -39,7 +43,10 @@ class Header extends StatelessWidget {
                 onTap: onPlannerTap,
                 child: const _HeaderTextButton(text: "플래너"),
               ),
-              const _HeaderTextButton(text: "마이리포트"),
+              GestureDetector(
+                onTap: onMyReportTap, // 마이리포트 이동 연결
+                child: const _HeaderTextButton(text: "마이리포트"),
+              ),
               GestureDetector(
                 onTap: onMyPageTap, // 마이페이지 이동 연결
                 child: const _HeaderTextButton(text: "마이페이지"),
@@ -86,6 +93,7 @@ class _HeaderTextButton extends StatelessWidget {
         style: const TextStyle(
           fontSize: 16,
           color: Color(0xFF123456),
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

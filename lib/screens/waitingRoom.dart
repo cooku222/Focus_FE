@@ -2,6 +2,8 @@ import 'dart:html';
 import 'package:flutter/material.dart';
 import 'dart:ui_web' as ui;
 
+import 'waitingRoom2.dart'; // WaitingRoom2 import
+
 class WaitingRoom extends StatelessWidget {
   const WaitingRoom({Key? key}) : super(key: key);
 
@@ -19,11 +21,14 @@ class WaitingRoom extends StatelessWidget {
         // Get user media (webcam stream)
         window.navigator.mediaDevices?.getUserMedia({'video': true}).then((stream) {
           video.srcObject = stream;
+        }).catchError((error) {
+          print('Error accessing webcam: $error');
         });
 
         return video;
       },
     );
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
@@ -70,18 +75,7 @@ class WaitingRoom extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.white, width: 2),
                   ),
-                  child: const Center(
-                    child: Text(
-                      '웹캠 화면 미리보기',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                  child: HtmlElementView(viewType: 'webcam-view'), // Embed webcam view
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -93,6 +87,36 @@ class WaitingRoom extends StatelessWidget {
                     color: Colors.white,
                   ),
                   textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    // Navigate to WaitingRoom2
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const WaitingRoom2()),
+                    );
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.blue), // Button color
+                    padding: MaterialStateProperty.all(
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    shape: MaterialStateProperty.all(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  child: const Text(
+                    '다음 단계로 이동',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ],
             ),

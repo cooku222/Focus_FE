@@ -1,139 +1,143 @@
 import 'package:flutter/material.dart';
-import 'concentrateScreen.dart'; // 웹캠 화면 경로 임포트
+import '../screens/concentrateScreen.dart'; // ConcentrateScreen import
 
 class WaitingRoom2 extends StatefulWidget {
-  final List<String> subheadings; // 플래너에서 입력 받은 항목들
-
-  const WaitingRoom2({Key? key, required this.subheadings}) : super(key: key);
+  const WaitingRoom2({Key? key}) : super(key: key);
 
   @override
-  _WaitingRoom2State createState() => _WaitingRoom2State();
+  State<WaitingRoom2> createState() => _WaitingRoom2State();
 }
 
 class _WaitingRoom2State extends State<WaitingRoom2> {
-  List<String> filteredSubheadings = [];
-  TextEditingController searchController = TextEditingController();
+  // 더미 데이터 (플래너에서 입력된 데이터)
+  final List<String> dummyPlannerData = [
+    "Math Study",
+    "English Vocabulary",
+    "Science Experiment",
+    "History Notes",
+    "Coding Practice",
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-    filteredSubheadings = widget.subheadings;
-  }
-
-  void filterSearchResults(String query) {
-    setState(() {
-      filteredSubheadings = widget.subheadings
-          .where((subheading) =>
-          subheading.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    });
-  }
-
-  void addNewItem(String newItem) {
-    if (newItem.isNotEmpty) {
-      setState(() {
-        widget.subheadings.add(newItem);
-        filteredSubheadings = widget.subheadings;
-        searchController.clear();
-      });
-    }
-  }
+  // 검색 기록 리스트
+  List<String> searchHistory = [];
+  final TextEditingController searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF242424), // 검정 배경
       appBar: AppBar(
-        title: const Text('Waiting Room 2'),
-        backgroundColor: Colors.black,
+        title: const Text(
+          "데이터 추가",
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF242424),
+        elevation: 1,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                labelText: '검색',
-                hintText: '항목 검색...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+            // 검색창 블록
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8E8E8), // 검색창 블록 색상
+                borderRadius: BorderRadius.circular(12),
               ),
-              onChanged: filterSearchResults,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'today',
-              style: TextStyle(
-                color: Color(0xFFA6A5A5),
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.shade200,
-                      blurRadius: 5,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: ListView.builder(
-                  itemCount: filteredSubheadings.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(filteredSubheadings[index]),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      hintText: '항목 추가...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: "검색...",
+                        fillColor: Colors.white, // 검색란 배경색
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
+                      onChanged: (value) {
+                        // 검색어 입력 시 처리
+                      },
+                      onSubmitted: (value) {
+                        if (value.isNotEmpty) {
+                          setState(() {
+                            searchHistory.add(value); // 검색 기록에 추가
+                            searchController.clear();
+                          });
+                        }
+                      },
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () => addNewItem(searchController.text),
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () {
+                      final value = searchController.text.trim();
+                      if (value.isNotEmpty) {
+                        setState(() {
+                          searchHistory.add(value); // 검색 기록에 추가
+                          searchController.clear();
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
-            // "웹캠 화면으로 이동" 버튼 추가
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ConcentrateScreen(),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(fontSize: 18),
+            // 검색 기록 블록
+            Expanded(
+              child: ListView.builder(
+                itemCount: searchHistory.isNotEmpty
+                    ? searchHistory.length
+                    : dummyPlannerData.length,
+                itemBuilder: (context, index) {
+                  final item = searchHistory.isNotEmpty
+                      ? searchHistory[index]
+                      : dummyPlannerData[index];
+                  return ListTile(
+                    title: Text(
+                      item,
+                      style: const TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.add_circle, color: Colors.blue),
+                      onPressed: () {
+                        // 데이터 추가 동작
+                        print('Adding: $item');
+                      },
+                    ),
+                  );
+                },
               ),
-              child: const Text('웹캠 화면으로 이동'),
+            ),
+            const SizedBox(height: 16),
+            // 버튼 추가: ConcentrateScreen으로 이동
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ConcentrateScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  "측정 화면으로 이동",
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
             ),
           ],
         ),

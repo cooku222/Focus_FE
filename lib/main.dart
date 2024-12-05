@@ -41,9 +41,9 @@ class MyApp extends StatelessWidget {
         '/register/info5': (context) => const Info5Screen(), // 회원가입 정보5
         '/planner': (context) => const PlannerScreen(), // 플래너 화면
         '/waitingRoom': (context) => const WaitingRoom(), // 대기실 화면
-        '/waitingRoom2': (context) => const WaitingRoom2(subheadings: [],), // 대기실 2 화면
+        '/waitingRoom2': (context) => const WaitingRoom2(), // 대기실 2 화면
         '/concentrateScreen': (context) => const ConcentrateScreen(), // 집중 화면
-        '/dailyReport': (context) => const TableCalendarScreen(), // 일일 리포트 화면
+        '/dailyReport': (context) => DailyReportScreen(), // 일일 리포트 화면
         '/myPage': (context) => const MyPageScreen(),
       },
       onUnknownRoute: (settings) {
@@ -107,28 +107,16 @@ class _MainScreenState extends State<MainScreen> {
             children: [
               Header(
                 onPlannerTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PlannerScreen(),
-                    ),
-                  );
+                  Navigator.pushNamed(context, '/planner');
                 },
                 onLoginTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
-                    ),
-                  );
+                  Navigator.pushNamed(context, '/login');
                 },
                 onRegisterTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RegisterScreen(),
-                    ),
-                  );
+                  Navigator.pushNamed(context, '/register');
+                },
+                onMyReportTap: () {
+                  Navigator.pushNamed(context, '/dailyReport'); // 마이리포트로 연결
                 },
               ),
               Stack(
