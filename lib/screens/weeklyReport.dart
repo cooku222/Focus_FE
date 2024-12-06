@@ -1,127 +1,81 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import '../widgets/header.dart';
 
-class WeeklyReportScreen extends StatelessWidget {
-  final List<Map<String, dynamic>> weeklyData = [
-    {
-      "date": "2024-11-18",
-      "userId": 1,
-      "totalFocusedTime": 10800,
-      "totalNotFocusedTime": 10800,
-      "totalDuration": 21600,
-      "focusedRatio": 0.5,
-      "notFocusedRatio": 0.5
-    },
-    {
-      "date": "2024-11-19",
-      "userId": 1,
-      "totalFocusedTime": 12000,
-      "totalNotFocusedTime": 28000,
-      "totalDuration": 40000,
-      "focusedRatio": 0.3,
-      "notFocusedRatio": 0.7
-    },
-    {
-      "date": "2024-11-20",
-      "userId": 1,
-      "totalFocusedTime": 12000,
-      "totalNotFocusedTime": 18000,
-      "totalDuration": 30000,
-      "focusedRatio": 0.4,
-      "notFocusedRatio": 0.6
-    },
-    {
-      "date": "2024-11-21",
-      "userId": 1,
-      "totalFocusedTime": 16000,
-      "totalNotFocusedTime": 4000,
-      "totalDuration": 20000,
-      "focusedRatio": 0.8,
-      "notFocusedRatio": 0.2
-    },
-    {
-      "date": "2024-11-22",
-      "userId": 1,
-      "totalFocusedTime": 24000,
-      "totalNotFocusedTime": 16000,
-      "totalDuration": 40000,
-      "focusedRatio": 0.6,
-      "notFocusedRatio": 0.4
-    },
-    {
-      "date": "2024-11-23",
-      "userId": 1,
-      "totalFocusedTime": 4000,
-      "totalNotFocusedTime": 16000,
-      "totalDuration": 20000,
-      "focusedRatio": 0.2,
-      "notFocusedRatio": 0.8
-    },
-    {
-      "date": "2024-11-24",
-      "userId": 1,
-      "totalFocusedTime": 21000,
-      "totalNotFocusedTime": 9000,
-      "totalDuration": 30000,
-      "focusedRatio": 0.7,
-      "notFocusedRatio": 0.3
-    }
-  ];
+class WeeklyReportScreen extends StatefulWidget {
+  final int userId; // 유저 ID
+  final String startDate; // 주간 리포트의 시작 날짜
 
-  final List<Map<String, dynamic>> contentData = [
-    {
-      "sessionId": 1,
-      "sessionName": "Mathmatics",
-      "focusedTime": 1800,
-      "notFocusedTime": 1800,
-      "focusRatio": 0.5,
-      "notFocusRatio": 0.5
-    },
-    {
-      "sessionId": 2,
-      "sessionName": "English",
-      "focusedTime": 1800,
-      "notFocusedTime": 1800,
-      "focusRatio": 0.5,
-      "notFocusRatio": 0.5
-    },
-    {
-      "sessionId": 3,
-      "sessionName": "Korean",
-      "focusedTime": 1800,
-      "notFocusedTime": 1800,
-      "focusRatio": 0.5,
-      "notFocusRatio": 0.5
-    },
-    {
-      "sessionId": 4,
-      "sessionName": "DB",
-      "focusedTime": 1800,
-      "notFocusedTime": 1800,
-      "focusRatio": 0.5,
-      "notFocusRatio": 0.5
-    },
-    {
-      "sessionId": 5,
-      "sessionName": "OS",
-      "focusedTime": 1800,
-      "notFocusedTime": 1800,
-      "focusRatio": 0.5,
-      "notFocusRatio": 0.5
-    },
-    {
-      "sessionId": 6,
-      "sessionName": "AI",
-      "focusedTime": 1800,
-      "notFocusedTime": 1800,
-      "focusRatio": 0.5,
-      "notFocusRatio": 0.5
+  const WeeklyReportScreen({Key? key, required this.userId, required this.startDate})
+      : super(key: key);
+
+  @override
+  _WeeklyReportScreenState createState() => _WeeklyReportScreenState();
+}
+
+class _WeeklyReportScreenState extends State<WeeklyReportScreen> {
+  List<Map<String, dynamic>> weeklyData = [];
+  bool isLoading = true;
+  bool hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchWeeklyReport();
+  }
+
+  Future<void> fetchWeeklyReport() async {
+    final url = 'http://52.78.38.195/api/weekly-report/${widget.userId}/${widget.startDate}/summary';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        setState(() {
+          weeklyData = List<Map<String, dynamic>>.from(jsonDecode(response.body));
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load weekly report');
+      }
+    } catch (error) {
+      setState(() {
+        isLoading = false;
+        hasError = true;
+      });
     }
-  ];
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (hasError || weeklyData.isEmpty) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Failed to load weekly report',
+                style: TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: fetchWeeklyReport,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -147,18 +101,6 @@ class WeeklyReportScreen extends StatelessWidget {
                     buildStackedBarChart(),
                     const SizedBox(height: 30),
                     buildSolutionBox(),
-                    const SizedBox(height: 30),
-                    const Text(
-                      '컨텐츠별 집중도 현황',
-                      style: TextStyle(
-                        fontFamily: 'Hero',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 36,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    buildContentReportGraph(),
                   ],
                 ),
               ),
@@ -178,8 +120,8 @@ class WeeklyReportScreen extends StatelessWidget {
             final index = entry.key;
             final data = entry.value;
 
-            final focusedTimeHours = data['totalFocusedTime'] / 3600;
-            final notFocusedTimeHours = data['totalNotFocusedTime'] / 3600;
+            final focusedTimeHours = (data['totalFocusedTime'] ?? 0) / 3600;
+            final notFocusedTimeHours = (data['totalNotFocusedTime'] ?? 0) / 3600;
 
             return BarChartGroupData(
               x: index,
@@ -197,7 +139,10 @@ class WeeklyReportScreen extends StatelessWidget {
             );
           }).toList(),
           titlesData: FlTitlesData(
-            leftTitles: SideTitles(showTitles: true, getTitles: (value) => '${value.toInt()}h'),
+            leftTitles: SideTitles(
+              showTitles: true,
+              getTitles: (value) => '${value.toInt()}h',
+            ),
             bottomTitles: SideTitles(
               showTitles: true,
               getTitles: (value) {
@@ -212,124 +157,6 @@ class WeeklyReportScreen extends StatelessWidget {
           gridData: FlGridData(show: true),
           borderData: FlBorderData(show: true),
         ),
-      ),
-    );
-  }
-
-  Widget buildContentReportGraph() {
-    return SizedBox(
-      height: 400,
-      child: Stack(
-        children: [
-          // 막대 그래프
-          BarChart(
-            BarChartData(
-              barGroups: contentData.map((data) {
-                final index = data['sessionId'] - 1;
-                final focusedTimeMinutes = data['focusedTime'] / 60;
-                final notFocusedTimeMinutes = data['notFocusedTime'] / 60;
-
-                return BarChartGroupData(
-                  x: index,
-                  barRods: [
-                    BarChartRodData(
-                      y: focusedTimeMinutes + notFocusedTimeMinutes,
-                      rodStackItems: [
-                        BarChartRodStackItem(0, notFocusedTimeMinutes, const Color(0xFFBEBEBE)),
-                        BarChartRodStackItem(
-                          notFocusedTimeMinutes,
-                          focusedTimeMinutes + notFocusedTimeMinutes,
-                          const Color(0xFF0019FF),
-                        ),
-                      ],
-                      width: 12,
-                    ),
-                  ],
-                );
-              }).toList(),
-              titlesData: FlTitlesData(
-                leftTitles: SideTitles(
-                  showTitles: true,
-                  getTitles: (value) {
-                    if (value % 10 == 0) return '${value.toInt()}분';
-                    return '';
-                  },
-                ),
-                rightTitles: SideTitles(
-                  showTitles: true,
-                  getTitles: (value) {
-                    if (value % 10 == 0) return '${value.toInt()}분';
-                    return '';
-                  },
-                ),
-                bottomTitles: SideTitles(
-                  showTitles: true,
-                  getTitles: (value) {
-                    final index = value.toInt();
-                    if (index < contentData.length) {
-                      return contentData[index]['sessionName'];
-                    }
-                    return '';
-                  },
-                ),
-              ),
-              gridData: FlGridData(show: true),
-              borderData: FlBorderData(show: true),
-            ),
-          ),
-          // 꺾은선 그래프
-          LineChart(
-            LineChartData(
-              lineBarsData: [
-                LineChartBarData(
-                  spots: contentData.map((data) {
-                    final index = data['sessionId'] - 1;
-                    return FlSpot(index.toDouble(), data['focusRatio'] * 100);
-                  }).toList(),
-                  isCurved: true,
-                  colors: [const Color(0xFFFF5722)],
-                  barWidth: 4,
-                  belowBarData: BarAreaData(show: false),
-                ),
-              ],
-              titlesData: FlTitlesData(
-                leftTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 40,
-                  getTitles: (value) {
-                    if (value == 0) return '0%';
-                    if (value == 50) return '50%';
-                    if (value == 100) return '100%';
-                    return '';
-                  },
-                ),
-                rightTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 40,
-                  getTitles: (value) {
-                    if (value == 0) return '0분';
-                    if (value == 50) return '50분';
-                    if (value == 100) return '100분';
-                    return '';
-                  },
-                ),
-                bottomTitles: SideTitles(
-                  showTitles: true,
-                  getTitles: (value) {
-                    final index = value.toInt();
-                    if (index < contentData.length) {
-                      return contentData[index]['sessionName'];
-                    }
-                    return '';
-                  },
-                ),
-              ),
-              maxY: 100,
-              gridData: FlGridData(show: true),
-              borderData: FlBorderData(show: false),
-            ),
-          ),
-        ],
       ),
     );
   }

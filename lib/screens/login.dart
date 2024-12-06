@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:focus/main.dart'; // 메인 화면으로 돌아가기 위해 main.dart를 임포트
 import 'package:focus/widgets/header.dart'; // Header 위젯 경로 임포트
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure Storage 임포트
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -17,16 +18,23 @@ class _LoginScreenState extends State<LoginScreen> {
   final String correctEmail = "admin@test.ac.kr";
   final String correctPassword = "admin";
 
-  void handleLogin() {
+  static const storage = FlutterSecureStorage(); // FlutterSecureStorage 초기화
+
+  void handleLogin() async {
     String email = emailController.text;
     String password = passwordController.text;
 
     if (email == correctEmail && password == correctPassword) {
       // 로그인 성공
+      // 사용자 정보를 FlutterSecureStorage에 저장
+      await storage.write(key: 'userEmail', value: email);
+      await storage.write(key: 'userToken', value: 'sampleToken123'); // 예시 토큰
+
+      // 메인 화면으로 이동
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const MainScreen()),
-            (route) => false, // 이전 화면을 모두 제거
+            (route) => false, // 이전 화면 제거
       );
     } else {
       // 로그인 실패
@@ -46,12 +54,24 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void handleRegister() {
-    // 회원가입 버튼 동작 추가 (예: 회원가입 화면으로 이동)
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScreen()), // 예시
-    );
+  Future<void> checkLoginStatus() async {
+    // FlutterSecureStorage에서 로그인 정보 확인
+    String? userEmail = await storage.read(key: 'userEmail');
+    if (userEmail != null) {
+      // 이미 로그인된 상태라면 메인 화면으로 이동
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false, // 이전 화면 제거
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // 로그인 상태 확인
+    checkLoginStatus();
   }
 
   @override
@@ -70,7 +90,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
               ),
               const SizedBox(height: 55), // 헤더와 로그인 텍스트 간격
-              // "로그인" 제목
               const Center(
                 child: Text(
                   "로그인",
@@ -84,7 +103,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 55), // "로그인"과 입력 필드 간격
-              // ID 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
@@ -143,7 +161,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 55), // 간격
-                    // 로그인 버튼
                     Center(
                       child: GestureDetector(
                         onTap: handleLogin,
@@ -157,32 +174,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: const Center(
                             child: Text(
                               "로그인",
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w400,
-                                fontFamily: "Inter",
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 55), // 간격
-                    // 회원가입 버튼
-                    Center(
-                      child: GestureDetector(
-                        onTap: handleRegister,
-                        child: Container(
-                          width: double.infinity,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: const Color(0x80327B9E), // 투명도 50%
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              "회원가입",
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w400,

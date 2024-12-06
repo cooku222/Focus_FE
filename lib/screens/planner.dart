@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:focus/widgets/header.dart'; // Header 추가
 import 'package:table_calendar/table_calendar.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
 
 class PlannerScreen extends StatefulWidget {
-  const PlannerScreen({Key? key}) : super(key: key);
+  final int userId;
+
+  const PlannerScreen({Key? key, required this.userId, required int date}) : super(key: key);
 
   @override
   _PlannerScreenState createState() => _PlannerScreenState();
@@ -12,22 +16,55 @@ class PlannerScreen extends StatefulWidget {
 class _PlannerScreenState extends State<PlannerScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-
-  // 날짜별로 할 일 목록 관리
   Map<DateTime, List<Map<String, dynamic>>> _tasksByDate = {};
-
-  String? _selectedSubject; // 드롭다운에서 선택된 과목
-  final TextEditingController _taskController = TextEditingController();
-
-  final List<String> _subjects = ['수학', '영어', '과학', '국어']; // 예시 과목 리스트
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   @override
-  void dispose() {
-    _taskController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _checkLoginStatus(); // Check if the user is logged in
+    _fetchPlannerData(_focusedDay);
   }
 
-  // 선택된 날짜의 할 일 목록 가져오기
+  /// Checks if the user is logged in and redirects to the login screen if not
+  Future<void> _checkLoginStatus() async {
+    final String? isLoggedIn = await _secureStorage.read(key: 'isLoggedIn');
+
+    if (isLoggedIn != 'true') {
+      // Redirect to the login screen if the user is not logged in
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
+  Future<void> _fetchPlannerData(DateTime date) async {
+    final String formattedDate =
+        "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+    final String apiUrl =
+        "http://52.78.38.195/api/planner/${widget.userId}/$formattedDate";
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+
+        setState(() {
+          _tasksByDate[date] = responseData.map<Map<String, dynamic>>((task) {
+            return {
+              "subject": task['title'],
+              "task": task['state'],
+              "completed": false,
+            };
+          }).toList();
+        });
+      } else {
+        print("Failed to fetch data: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching planner data: $e");
+    }
+  }
+
   List<Map<String, dynamic>> get _tasksForSelectedDate {
     if (_selectedDay != null) {
       final selectedDate = DateTime(
@@ -40,32 +77,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
     return [];
   }
 
-  void _addTask() {
-    if (_selectedSubject != null && _taskController.text.isNotEmpty) {
-      setState(() {
-        if (_selectedDay != null) {
-          final selectedDate = DateTime(
-            _selectedDay!.year,
-            _selectedDay!.month,
-            _selectedDay!.day,
-          );
-
-          if (_tasksByDate[selectedDate] == null) {
-            _tasksByDate[selectedDate] = [];
-          }
-
-          _tasksByDate[selectedDate]?.add({
-            "subject": _selectedSubject,
-            "task": _taskController.text,
-            "completed": false,
-          });
-
-          _taskController.clear();
-        }
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,8 +85,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Header(),
-            const SizedBox(height: 16),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
@@ -94,7 +103,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 캘린더
                   Expanded(
                     flex: 2,
                     child: TableCalendar(
@@ -108,6 +116,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           _selectedDay = selectedDay;
                           _focusedDay = focusedDay;
                         });
+                        _fetchPlannerData(selectedDay);
                       },
                       calendarStyle: const CalendarStyle(
                         todayDecoration: BoxDecoration(
@@ -122,136 +131,74 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // 드롭다운과 할 일 입력
                   Expanded(
                     flex: 3,
-                    child: Column(
-                      children: [
-                        // 드롭다운
-                        DropdownButtonFormField<String>(
-                          value: _selectedSubject,
-                          hint: const Text("과목을 선택하세요"),
-                          items: _subjects.map((subject) {
-                            return DropdownMenuItem<String>(
-                              value: subject,
-                              child: Text(subject),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedSubject = value;
-                            });
-                          },
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: "과목 선택",
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _tasksForSelectedDate.length,
+                      itemBuilder: (context, index) {
+                        var task = _tasksForSelectedDate[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8.0,
+                            vertical: 4.0,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        // 할 일 입력 필드
-                        TextField(
-                          controller: _taskController,
-                          decoration: const InputDecoration(
-                            labelText: "할 일 입력",
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // 추가 버튼
-                        ElevatedButton(
-                          onPressed: _addTask,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF8AD2E6),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            "추가",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // 할 일 목록
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFB6F9FF).withOpacity(0.24),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _tasksForSelectedDate.length,
-                            itemBuilder: (context, index) {
-                              var task = _tasksForSelectedDate[index];
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0,
-                                  vertical: 4.0,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF8AD2E6),
+                                  shape: BoxShape.circle,
                                 ),
-                                child: Row(
+                                child: Center(
+                                  child: Text(
+                                    task["subject"][0],
+                                    style: const TextStyle(
+                                      color: Color(0xFF4F378A),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFF8AD2E6),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          task["subject"][0],
-                                          style: const TextStyle(
-                                            color: Color(0xFF4F378A),
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
+                                    Text(
+                                      task["subject"],
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            task["subject"],
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Text(
-                                            task["task"],
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ],
+                                    Text(
+                                      task["task"],
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.black,
                                       ),
-                                    ),
-                                    Checkbox(
-                                      value: task["completed"],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          task["completed"] = value ?? false;
-                                        });
-                                      },
                                     ),
                                   ],
                                 ),
-                              );
-                            },
+                              ),
+                              Checkbox(
+                                value: task["completed"],
+                                onChanged: (value) {
+                                  setState(() {
+                                    task["completed"] = value ?? false;
+                                  });
+                                },
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ],

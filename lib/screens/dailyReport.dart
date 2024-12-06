@@ -1,34 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../widgets/header.dart';
-import 'weeklyReport.dart'; // WeeklyReportScreen import
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class DailyReportScreen extends StatelessWidget {
-  final Map<String, dynamic> dummyData = {
-    "totalFocusedTime": 21000,
-    "totalNotFocusedTime": 9000,
-    "totalDuration": 30000,
-    "focusedRatio": 0.7,
-    "notFocusedRatio": 0.3,
-  };
+import '../widgets/header.dart';
+import '../screens/weeklyReport.dart';
+
+class DailyReportScreen extends StatefulWidget {
+  final int userId;
+  final String date;
+
+  const DailyReportScreen({Key? key, required this.userId, required this.date})
+      : super(key: key);
+
+  @override
+  _DailyReportScreenState createState() => _DailyReportScreenState();
+}
+
+class _DailyReportScreenState extends State<DailyReportScreen> {
+  Map<String, dynamic>? reportData;
+  bool isLoading = true;
+  bool hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDailyReport();
+  }
+
+  Future<void> fetchDailyReport() async {
+    final url = 'http://52.78.38.195/api/daily-report/${widget.userId}/${widget.date}/summary';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        setState(() {
+          reportData = json.decode(response.body);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load daily report');
+      }
+    } catch (error) {
+      setState(() {
+        isLoading = false;
+        hasError = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final focusedTime = dummyData['totalFocusedTime'];
-    final notFocusedTime = dummyData['totalNotFocusedTime'];
-    final totalDuration = dummyData['totalDuration'];
-    final focusedRatio = dummyData['focusedRatio'];
-    final notFocusedRatio = dummyData['notFocusedRatio'];
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-    final today = DateTime.now();
-    final formattedDate =
-        "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+    if (hasError || reportData == null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Failed to load daily report',
+                style: TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: fetchDailyReport,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final focusedTime = reportData!['totalFocusedTime'];
+    final notFocusedTime = reportData!['totalNotFocusedTime'];
+    final totalDuration = reportData!['totalDuration'];
+    final focusedRatio = reportData!['focusedRatio'];
+    final notFocusedRatio = reportData!['notFocusedRatio'];
 
     return Scaffold(
-      backgroundColor: Colors.white, // 배경 색상 흰색으로 설정
+      backgroundColor: Colors.white,
       body: Column(
         children: [
-          const Header(title: 'Daily Report'), // Header 추가
+          const Header(title: 'Daily Report'),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -48,7 +107,7 @@ class DailyReportScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        formattedDate,
+                        widget.date,
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 16,
@@ -131,7 +190,10 @@ class DailyReportScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => WeeklyReportScreen(),
+                          builder: (context) => WeeklyReportScreen(
+                            userId: 1, // 사용자의 ID
+                            startDate: "2024-12-01", // 주간 리포트 시작 날짜
+                          ),
                         ),
                       );
                     },

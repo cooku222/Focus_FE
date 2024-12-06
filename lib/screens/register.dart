@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:focus/screens/info1.dart'; // Info1 화면을 import
 import 'package:focus/widgets/header.dart'; // Header 위젯 경로 임포트
 
@@ -32,13 +34,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
-  void _register() {
+  Future<void> _register() async {
     final email = emailController.text.trim();
-    final nickname = nicknameController.text.trim();
+    final username = nicknameController.text.trim();
     final password = passwordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
 
-    if (email.isEmpty || nickname.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (email.isEmpty || username.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('모든 필드를 입력하세요.')),
       );
@@ -52,28 +54,115 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // 회원가입 성공 로직 처리 후 페이지 이동
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const Info1Screen()),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('http://52.78.38.195/api/sign-up'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": email,
+          "password": password,
+          "username": username,
+          "roles": ["USER"]
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('회원가입 성공!')),
+        );
+        Navigator.pushReplacementNamed(context, '/register/info1'); // Updated Route Transition
+      } else {
+        final error = jsonDecode(response.body)['message'] ?? '회원가입 실패';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error)),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('오류가 발생했습니다. 다시 시도하세요.')),
+      );
+    }
+  }
+
+  Future<void> _checkEmail() async {
+    final email = emailController.text.trim();
+
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이메일을 입력하세요.')),
+      );
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://52.78.38.195/api/users/check-email'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"email": email}),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('사용 가능한 이메일입니다.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이메일이 이미 사용 중입니다.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('오류가 발생했습니다. 다시 시도하세요.')),
+      );
+    }
+  }
+
+  Future<void> _checkNickname() async {
+    final username = nicknameController.text.trim();
+
+    if (username.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('닉네임을 입력하세요.')),
+      );
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://52.78.38.195/api/users/check-name'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"username": username}),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('사용 가능한 닉네임입니다.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('닉네임이 이미 사용 중입니다.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('오류가 발생했습니다. 다시 시도하세요.')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        color: Colors.white, // 전체 배경 흰색
+        color: Colors.white,
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 헤더
               Header(),
-              SizedBox(height: 55), // 헤더와 "회원가입" 간격
-              // "회원가입" 제목
+              const SizedBox(height: 55),
               Center(
-                child: Text(
+                child: const Text(
                   "회원가입",
                   style: TextStyle(
                     fontSize: 28,
@@ -84,13 +173,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 55), // 제목과 입력 블록 간격
+              const SizedBox(height: 55),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 이메일 입력 블록
                     _buildInputBlock(
                       label: "이메일",
                       controller: emailController,
@@ -101,9 +189,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         });
                       },
                       buttonLabel: "이메일 중복 확인",
+                      onButtonPressed: _checkEmail,
                     ),
-                    SizedBox(height: 20), // 간격
-                    // 닉네임 입력 블록
+                    const SizedBox(height: 20),
                     _buildInputBlock(
                       label: "닉네임",
                       controller: nicknameController,
@@ -114,12 +202,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         });
                       },
                       buttonLabel: "닉네임 중복 확인",
+                      onButtonPressed: _checkNickname,
                     ),
-                    SizedBox(height: 20), // 간격
-                    // 비밀번호 및 비밀번호 확인 블록
+                    const SizedBox(height: 20),
                     Row(
                       children: [
-                        // 비밀번호 입력
                         Expanded(
                           child: _buildPasswordBlock(
                             label: "비밀번호",
@@ -127,8 +214,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             onChanged: checkPasswordMatch,
                           ),
                         ),
-                        SizedBox(width: 16),
-                        // 비밀번호 확인
+                        const SizedBox(width: 16),
                         Expanded(
                           child: _buildPasswordBlock(
                             label: "비밀번호 확인",
@@ -138,10 +224,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ],
                     ),
-                    // 비밀번호 불일치 메시지
                     if (!isPasswordMatch)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8.0),
                         child: Text(
                           "비밀번호가 올바르지 않습니다",
                           style: TextStyle(
@@ -150,8 +235,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       ),
-                    SizedBox(height: 55), // 간격
-                    // 회원가입 버튼
+                    const SizedBox(height: 55),
                     Center(
                       child: GestureDetector(
                         onTap: _register,
@@ -159,10 +243,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           width: 737,
                           height: 75,
                           decoration: BoxDecoration(
-                            color: Color(0x80327B9E), // 투명도 50%
+                            color: const Color(0x80327B9E),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Center(
+                          child: const Center(
                             child: Text(
                               "회원가입",
                               style: TextStyle(
@@ -176,7 +260,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 100), // 하단 공간 확보
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -187,26 +271,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // 입력 블록 공통 메서드
   Widget _buildInputBlock({
     required String label,
     required TextEditingController controller,
     required bool isFocused,
     required Function(bool) onFocusChange,
     required String buttonLabel,
+    required Function() onButtonPressed,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 16,
             fontFamily: "Noto Sans KR",
             color: Color(0xFF434343),
           ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -215,37 +299,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: isFocused ? Color(0xFF1B23D9) : Color(0xFFC4C4C4),
+                      color: isFocused ? const Color(0xFF1B23D9) : const Color(0xFFC4C4C4),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: TextField(
                     controller: controller,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       border: InputBorder.none,
-                      hintText: "$label 입력",
+                      hintText: "입력하세요",
                     ),
                   ),
                 ),
               ),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Container(
               width: 144.83,
               height: 63.09,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: onButtonPressed,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0x268AD2E6), // 투명도 15%
+                  backgroundColor: const Color(0x268AD2E6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: Text(
                   buttonLabel,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF123456),
@@ -259,7 +343,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // 비밀번호 블록 공통 메서드
   Widget _buildPasswordBlock({
     required String label,
     required TextEditingController controller,
@@ -270,30 +353,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 16,
             fontFamily: "Noto Sans KR",
             color: Color(0xFF434343),
           ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Container(
           width: 347.35,
           decoration: BoxDecoration(
             border: Border.all(
-              color: Color(0xFFC4C4C4),
+              color: const Color(0xFFC4C4C4),
               width: 1,
             ),
             borderRadius: BorderRadius.circular(8),
           ),
-          padding: EdgeInsets.symmetric(horizontal: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: TextField(
             controller: controller,
             obscureText: true,
             onChanged: onChanged,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               border: InputBorder.none,
-              hintText: "$label 입력",
+              hintText: "비밀번호 입력",
             ),
           ),
         ),

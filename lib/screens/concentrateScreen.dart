@@ -1,6 +1,10 @@
 import 'dart:html';
-import 'package:flutter/material.dart';
 import 'dart:ui_web' as ui;
+import 'dart:typed_data';
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class ConcentrateScreen extends StatefulWidget {
   const ConcentrateScreen({Key? key}) : super(key: key);
@@ -10,123 +14,148 @@ class ConcentrateScreen extends StatefulWidget {
 }
 
 class _ConcentrateScreenState extends State<ConcentrateScreen> {
-  DateTime startTime = DateTime.now();
-  String currentTime = '';
-  String currentDate = '';
-  Duration elapsedTime = Duration.zero;
+  late VideoElement videoElement;
+  bool isWebcamInitialized = false;
+  bool isCapturing = false;
+  Timer? captureTimer;
 
   @override
   void initState() {
     super.initState();
     _initializeWebcam();
-    _startClock();
   }
 
-  void _initializeWebcam() {
-    ui.platformViewRegistry.registerViewFactory(
-      'webcam-view',
-          (int viewId) {
-        final video = VideoElement()
-          ..width = 320
-          ..height = 240
-          ..autoplay = true;
-
-        window.navigator.mediaDevices?.getUserMedia({'video': true}).then((stream) {
-          video.srcObject = stream;
-        }).catchError((error) {
-          print('Error accessing webcam: $error');
-        });
-
-        video.style.height = '100%';
-        video.style.width = '100%';
-
-        return video;
-      },
-    );
+  @override
+  void dispose() {
+    captureTimer?.cancel();
+    super.dispose();
   }
 
-  void _startClock() {
-    currentTime = _getFormattedTime();
-    currentDate = _getFormattedDate();
+  Future<void> _initializeWebcam() async {
+    videoElement = VideoElement()
+      ..width = 320
+      ..height = 240
+      ..autoplay = true;
 
-    // Update the time every second
-    Future.delayed(Duration.zero, () {
+    try {
+      final stream = await window.navigator.mediaDevices?.getUserMedia({'video': true});
+      videoElement.srcObject = stream;
       setState(() {
-        elapsedTime = DateTime.now().difference(startTime);
-        currentTime = _getFormattedTime();
+        isWebcamInitialized = true;
       });
+    } catch (error) {
+      print('Error accessing webcam: $error');
+    }
+  }
+
+  void _startCapturing() {
+    if (isCapturing || !isWebcamInitialized) return;
+
+    setState(() {
+      isCapturing = true;
+    });
+
+    captureTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!isCapturing) {
+        timer.cancel();
+      } else {
+        _captureFrame();
+      }
     });
   }
 
-  String _getFormattedTime() {
-    final now = DateTime.now();
-    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+  void _stopCapturing() {
+    if (!isCapturing) return;
+
+    setState(() {
+      isCapturing = false;
+    });
+
+    captureTimer?.cancel();
   }
 
-  String _getFormattedDate() {
-    final now = DateTime.now();
-    const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
-    return '${now.year}/${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')} (${weekdays[now.weekday - 1]})';
+  void _captureFrame() {
+    if (!isWebcamInitialized) return;
+
+    final canvas = CanvasElement(width: 320, height: 240);
+    final ctx = canvas.context2D;
+
+    // Draw the current frame onto the canvas
+    ctx.drawImage(videoElement, 0, 0);
+
+    // Convert canvas to Base64
+    final base64String = canvas.toDataUrl('image/png'); // "data:image/png;base64,..."
+
+    // Extract Base64 content and decode to binary
+    final base64Content = base64String.split(',')[1];
+    final binaryData = base64Decode(base64Content);
+
+    // Send binary data to the backend
+    _sendBinaryToBackend(binaryData);
   }
 
-  String _getFormattedElapsedTime() {
-    final hours = elapsedTime.inHours.toString().padLeft(2, '0');
-    final minutes = (elapsedTime.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (elapsedTime.inSeconds % 60).toString().padLeft(2, '0');
-    return '$hours시간 $minutes분 $seconds초';
+  Future<void> _sendBinaryToBackend(Uint8List binaryData) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://52.78.38.195/api/video-frame'),
+        headers: {
+          'Content-Type': 'application/octet-stream', // Binary MIME type
+        },
+        body: binaryData, // Binary data as the request body
+      );
+
+      if (response.statusCode == 200) {
+        print('Frame sent successfully');
+      } else {
+        print('Failed to send frame: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error sending frame: $error');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF242424), // 검정 바탕
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              currentTime,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w600,
-                fontSize: 128,
-                color: Colors.white,
-              ),
+      backgroundColor: const Color(0xFF242424),
+      body: isWebcamInitialized
+          ? Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 320,
+            height: 240,
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white, width: 2),
             ),
-            const SizedBox(height: 16),
-            Text(
-              currentDate,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w600,
-                fontSize: 32,
-                color: Colors.white,
+            child: HtmlElementView(viewType: 'webcam-view'),
+          ),
+          const SizedBox(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: _startCapturing,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isCapturing ? Colors.grey : Colors.green,
+                ),
+                child: Text(isCapturing ? "Capturing..." : "Start Capturing"),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '측정 시작 시간: ${_getFormattedElapsedTime()}',
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w400,
-                fontSize: 24,
-                color: Colors.white,
+              const SizedBox(width: 16),
+              ElevatedButton(
+                onPressed: _stopCapturing,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                ),
+                child: const Text("Stop Capturing"),
               ),
-            ),
-            const SizedBox(height: 32),
-            Container(
-              width: 320,
-              height: 240,
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-              child: HtmlElementView(viewType: 'webcam-view'), // 웹캠 화면
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        ],
+      )
+          : const Center(child: CircularProgressIndicator()),
     );
   }
 }

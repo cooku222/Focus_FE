@@ -16,6 +16,9 @@ import 'package:focus/screens/concentrateScreen.dart';
 import 'package:focus/screens/dailyReport.dart';
 import 'package:focus/widgets/header.dart';
 import 'package:focus/screens/myPage.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/status.dart' as status;
+import 'package:focus/screens/websocket_test_page.dart';
 
 
 void main() {
@@ -39,11 +42,11 @@ class MyApp extends StatelessWidget {
         '/register/info3': (context) => const Info3Screen(), // 회원가입 정보3
         '/register/info4': (context) => const Info4Screen(), // 회원가입 정보4
         '/register/info5': (context) => const Info5Screen(), // 회원가입 정보5
-        '/planner': (context) => const PlannerScreen(), // 플래너 화면
+        '/planner': (context) => const PlannerScreen(userId: 1, date: 2024-12-05), // 플래너 화면
         '/waitingRoom': (context) => const WaitingRoom(), // 대기실 화면
         '/waitingRoom2': (context) => const WaitingRoom2(), // 대기실 2 화면
         '/concentrateScreen': (context) => const ConcentrateScreen(), // 집중 화면
-        '/dailyReport': (context) => DailyReportScreen(), // 일일 리포트 화면
+        '/dailyReport': (context) => DailyReportScreen(userId: 1, date: "2024-12-05"), // 일일 리포트 화면
         '/myPage': (context) => const MyPageScreen(),
       },
       onUnknownRoute: (settings) {
@@ -65,6 +68,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final PageController _pageController = PageController(initialPage: 0);
+  late WebSocketChannel _channel;
   int _currentIndex = 0;
 
   final List<String> _images = [
@@ -76,6 +80,27 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+
+    // WebSocket 초기화
+    _channel = WebSocketChannel.connect(
+      Uri.parse('wss://your-websocket-server-url'),
+    );
+
+    // WebSocket 메시지 수신 리스너
+    _channel.stream.listen(
+          (message) {
+        print('Received from WebSocket: $message');
+        // WebSocket에서 받은 메시지를 처리할 수 있습니다.
+      },
+      onError: (error) {
+        print('WebSocket Error: $error');
+      },
+      onDone: () {
+        print('WebSocket connection closed.');
+      },
+    );
+
+    // 슬라이드 타이머 설정
     Timer.periodic(const Duration(seconds: 5), (Timer timer) {
       if (_currentIndex < _images.length - 1) {
         _currentIndex++;
@@ -93,7 +118,14 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _channel.sink.close(status.normalClosure); // WebSocket 연결 닫기
     super.dispose();
+  }
+
+  // WebSocket 메시지 전송 함수
+  void _sendMessage(String message) {
+    _channel.sink.add(message);
+    print('Sent to WebSocket: $message');
   }
 
   @override

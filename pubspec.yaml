@@ -47,10 +47,15 @@ dependencies:
   fl_chart: ^0.40.0
   stream_video: ^0.6.0
   stream_video_flutter: ^0.6.0
+  apivideo_live_stream: ^1.2.0
+  flutter_webrtc: ^0.11.7
+  file_picker: ^5.2.5
+  flutter_secure_storage: ^6.0.0
+  web_socket_channel: ^3.0.1
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
+#  flutter_test:
+#    sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

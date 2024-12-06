@@ -2,8 +2,6 @@ import 'dart:html';
 import 'package:flutter/material.dart';
 import 'dart:ui_web' as ui;
 
-import 'waitingRoom2.dart'; // WaitingRoom2 import
-
 class WaitingRoom extends StatelessWidget {
   const WaitingRoom({Key? key}) : super(key: key);
 
@@ -91,18 +89,15 @@ class WaitingRoom extends StatelessWidget {
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () {
-                    // Navigate to WaitingRoom2
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const WaitingRoom2()),
-                    );
+                    // Navigate to WaitingRoom2 using route-based navigation
+                    Navigator.pushNamed(context, '/waitingRoom2');
                   },
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(Colors.blue), // Button color
-                    padding: MaterialStateProperty.all(
+                    backgroundColor: WidgetStateProperty.all(Colors.blue), // Button color
+                    padding: WidgetStateProperty.all(
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
-                    shape: MaterialStateProperty.all(
+                    shape: WidgetStateProperty.all(
                       RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
