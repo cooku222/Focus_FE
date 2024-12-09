@@ -1,34 +1,94 @@
 import 'package:flutter/material.dart';
-import '../screens/concentrateScreen.dart'; // ConcentrateScreen import
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class WaitingRoom2 extends StatefulWidget {
-  const WaitingRoom2({Key? key}) : super(key: key);
+  final int userId; // User ID to fetch planner data
+  final String date; // Date for the planner query
+
+  const WaitingRoom2({Key? key, required this.userId, required this.date}) : super(key: key);
 
   @override
   State<WaitingRoom2> createState() => _WaitingRoom2State();
 }
 
 class _WaitingRoom2State extends State<WaitingRoom2> {
-  // 더미 데이터 (플래너에서 입력된 데이터)
-  final List<String> dummyPlannerData = [
-    "Math Study",
-    "English Vocabulary",
-    "Science Experiment",
-    "History Notes",
-    "Coding Practice",
-  ];
+  List<Map<String, dynamic>> plannerData = [];
+  bool isLoading = true;
+  bool hasError = false;
 
-  // 검색 기록 리스트
-  List<String> searchHistory = [];
-  final TextEditingController searchController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    _fetchPlannerData();
+  }
+
+  /// Fetch planner data from the API
+  Future<void> _fetchPlannerData() async {
+    final String apiUrl = 'http://52.78.38.195/api/planner/${widget.userId}/${widget.date}';
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+        setState(() {
+          plannerData = responseData.map<Map<String, dynamic>>((item) {
+            return {
+              "title": item['title'],
+              "state": item['state'],
+              "date": item['date'],
+            };
+          }).toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          hasError = true;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        hasError = true;
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (hasError) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Failed to load planner data',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _fetchPlannerData,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: const Color(0xFF242424), // 검정 배경
+      backgroundColor: const Color(0xFF242424), // Black background
       appBar: AppBar(
         title: const Text(
-          "데이터 추가",
+          "Planner Data",
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color(0xFF242424),
@@ -37,109 +97,55 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 검색창 블록
-            Container(
+        child: ListView.builder(
+          itemCount: plannerData.length,
+          itemBuilder: (context, index) {
+            final item = plannerData[index];
+            return Container(
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8E8E8), // 검색창 블록 색상
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: searchController,
-                      decoration: InputDecoration(
-                        hintText: "검색...",
-                        fillColor: Colors.white, // 검색란 배경색
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        // 검색어 입력 시 처리
-                      },
-                      onSubmitted: (value) {
-                        if (value.isNotEmpty) {
-                          setState(() {
-                            searchHistory.add(value); // 검색 기록에 추가
-                            searchController.clear();
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.search),
-                    onPressed: () {
-                      final value = searchController.text.trim();
-                      if (value.isNotEmpty) {
-                        setState(() {
-                          searchHistory.add(value); // 검색 기록에 추가
-                          searchController.clear();
-                        });
-                      }
-                    },
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-            // 검색 기록 블록
-            Expanded(
-              child: ListView.builder(
-                itemCount: searchHistory.isNotEmpty
-                    ? searchHistory.length
-                    : dummyPlannerData.length,
-                itemBuilder: (context, index) {
-                  final item = searchHistory.isNotEmpty
-                      ? searchHistory[index]
-                      : dummyPlannerData[index];
-                  return ListTile(
-                    title: Text(
-                      item,
-                      style: const TextStyle(fontSize: 16, color: Colors.white),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item['title'] ?? 'No Title',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.add_circle, color: Colors.blue),
-                      onPressed: () {
-                        // 데이터 추가 동작
-                        print('Adding: $item');
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            // 버튼 추가: ConcentrateScreen으로 이동
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ConcentrateScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
                   ),
-                ),
-                child: const Text(
-                  "측정 화면으로 이동",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'State: ${item['state'] ?? 'Unknown'}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Date: ${item['date'] ?? 'N/A'}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

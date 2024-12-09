@@ -20,6 +20,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   bool isWebcamInitialized = false;
   bool isCapturing = false;
   bool isPaused = false;
+  bool isNotificationMode = false; // Toggle between modes
   Timer? captureTimer;
   Timer? clockTimer;
 
@@ -44,7 +45,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     super.dispose();
   }
 
-  // Initialize webcam
   Future<void> _initializeWebcam() async {
     videoElement = VideoElement()
       ..width = 640
@@ -62,7 +62,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     }
   }
 
-  // WebSocket 연결
   void _connectToWebSocket() {
     final wsUrl = 'ws://52.78.38.195/image';
 
@@ -104,11 +103,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     });
   }
 
-  // Blob을 ArrayBuffer로 변환
-  Future<ByteBuffer> _blobToArrayBuffer(Blob blob) {
-    return promiseToFuture(callMethod(blob, 'arrayBuffer', []));
-  }
-
   void _captureAndSendImage() {
     if (!isWebcamInitialized || isPaused) return;
 
@@ -123,36 +117,32 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       }
 
       try {
-        // Convert Blob to ByteBuffer
         final arrayBuffer = await _blobToArrayBuffer(blob);
         final imageBytes = Uint8List.view(arrayBuffer);
 
-        // JSON 메타데이터 생성
         final metadata = jsonEncode({
           'user_id': 1,
           'title': 'TABA',
+          'mode': isNotificationMode ? 'real-time' : 'focus',
         });
 
-        // JSON 메타데이터를 바이너리로 변환
         final metadataBytes = Uint8List.fromList(utf8.encode(metadata + '\n'));
-
-        // JSON 메타데이터와 이미지 데이터를 합침
         final combinedBuffer = Uint8List(metadataBytes.length + imageBytes.length);
         combinedBuffer.setAll(0, metadataBytes);
         combinedBuffer.setAll(metadataBytes.length, imageBytes);
 
-        // WebSocket으로 전송
-        print("Sending metadata: $metadata");
-        print("Image size: ${imageBytes.length} bytes");
-
         webSocketChannel?.sink.add(combinedBuffer);
-        print("Combined metadata and image sent to WebSocket.");
+        print("Metadata and image sent in ${isNotificationMode ? 'real-time' : 'focus'} mode.");
       } catch (e) {
         print("Error processing image blob: $e");
       }
     }).catchError((error) {
       print("Error converting canvas to Blob: $error");
     });
+  }
+
+  Future<ByteBuffer> _blobToArrayBuffer(Blob blob) {
+    return promiseToFuture(callMethod(blob, 'arrayBuffer', []));
   }
 
   void _startCapturing() {
@@ -181,15 +171,10 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     captureTimer?.cancel();
   }
 
-  void _togglePause() {
+  void _toggleMode() {
     setState(() {
-      isPaused = !isPaused;
-    });
-  }
-
-  void _switchMode() {
-    setState(() {
-      displayMode = displayMode == 'Default' ? 'Fullscreen' : 'Default';
+      isNotificationMode = !isNotificationMode;
+      messages.clear(); // Clear messages for the new mode
     });
   }
 
@@ -211,22 +196,9 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                     color: Colors.white,
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _switchMode,
-                      child: Text("Switch Mode: $displayMode"),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "WebSocket Status: $webSocketStatus",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: webSocketStatus == "Connected" ? Colors.green : Colors.red,
-                      ),
-                    ),
-                  ],
+                ElevatedButton(
+                  onPressed: _toggleMode,
+                  child: Text(isNotificationMode ? "Switch to Focus Mode" : "Switch to Real-Time Mode"),
                 ),
               ],
             ),
@@ -253,26 +225,12 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
               children: [
                 ElevatedButton(
                   onPressed: _startCapturing,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isCapturing ? Colors.grey : Colors.green,
-                  ),
                   child: Text(isCapturing ? "Capturing..." : "Start Capturing"),
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
                   onPressed: _stopCapturing,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                  ),
                   child: const Text("Stop Capturing"),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _togglePause,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isPaused ? Colors.orange : Colors.blue,
-                  ),
-                  child: Text(isPaused ? "Resume" : "Pause"),
                 ),
               ],
             ),

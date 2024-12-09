@@ -5,7 +5,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 class WebSocketProvider extends ChangeNotifier {
   void connectWebSocket(String userId, String title, String image) {
     final channel = WebSocketChannel.connect(
-      Uri.parse('ws://localhost:8080/image'),
+      Uri.parse('ws://52.78.38.195/image'),
     );
 
     final payload = jsonEncode({

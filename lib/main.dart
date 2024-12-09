@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/', // 기본 경로
       routes: {
-        '/': (context) => AuthGuard(child: const MainScreen()), // 메인 화면 보호
+        '/': (context) => const MainScreen(), // 메인 화면 보호
         '/login': (context) => const LoginScreen(), // 로그인 화면
         '/register': (context) => RegisterScreen(), // 회원가입 화면
         '/register/info1': (context) => const Info1Screen(),
@@ -44,10 +44,9 @@ class MyApp extends StatelessWidget {
         '/planner': (context) => AuthGuard(
           child: const PlannerScreen(userId: 1, date: 2024 - 12 - 05),
         ), // 플래너 화면 보호
-        '/waitingRoom': (context) => const WaitingRoom(), // 대기실 화면 보호
-        '/waitingRoom2': (context) => const WaitingRoom2(), // 대기실 2 화면 보호
-        '/concentrateScreen': (context) =>
-        const ConcentrateScreen(), // 집중 화면 보호
+        '/waitingRoom': (context) => AuthGuard(child: const WaitingRoom()),
+        '/waitingRoom2': (context) => AuthGuard(child: const WaitingRoom2()),// 대기실 2 화면 보호
+        '/concentrateScreen': (context) => AuthGuard(child: const ConcentrateScreen()), // 집중 화면 보호
         '/dailyReport': (context) => AuthGuard(
           child: DailyReportScreen(userId: 1, date: "2024-12-05"),
         ), // 일일 리포트 화면 보호
@@ -147,6 +146,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       );
                     },
+                    username: username ?? "Guest"
                   ),
                 ],
               ),
@@ -318,8 +318,12 @@ class _MainScreenState extends State<MainScreen> {
 
 class _TopBlock extends StatelessWidget {
   final VoidCallback onMeasureTap;
+  final String username; // Accept username
 
-  const _TopBlock({required this.onMeasureTap});
+  const _TopBlock({
+    required this.onMeasureTap,
+    required this.username, // Initialize username
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -339,9 +343,9 @@ class _TopBlock extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
       child: Column(
         children: [
-          const Text(
-            "(웹 사이트 회원 이름)님의 오늘을 응원합니다",
-            style: TextStyle(
+          Text(
+            "$username님의 오늘을 응원합니다",
+            style: const TextStyle(
               fontSize: 40,
               fontWeight: FontWeight.w600,
               fontFamily: "Inter",

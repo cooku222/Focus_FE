@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:focus/main.dart'; // 메인 화면으로 돌아가기 위해 main.dart를 임포트
 import 'package:focus/widgets/header.dart'; // Header 위젯 경로 임포트
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure Storage 임포트
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -14,30 +16,32 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  // 임시로 하드 코딩된 로그인 데이터
-  final String correctEmail = "admin@test.ac.kr";
-  final String correctPassword = "admin";
-
   static const storage = FlutterSecureStorage(); // FlutterSecureStorage 초기화
 
   void handleLogin() async {
     String email = emailController.text;
     String password = passwordController.text;
 
-    if (email == correctEmail && password == correctPassword) {
-      // 로그인 성공
-      // 사용자 정보를 FlutterSecureStorage에 저장
-      await storage.write(key: 'userEmail', value: email);
-      await storage.write(key: 'userToken', value: 'sampleToken123'); // 예시 토큰
+    final response = await http.post(
+      Uri.parse('/api/sign-in'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"email": email, "password": password}),
+    );
 
-      // 메인 화면으로 이동
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      final accessToken = responseData['accessToken'];
+      final username = _decodeJWT(accessToken)['username']; // Extract username from token
+
+      await storage.write(key: 'accessToken', value: accessToken);
+      await storage.write(key: 'username', value: username);
+
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const MainScreen()),
-            (route) => false, // 이전 화면 제거
+            (route) => false,
       );
     } else {
-      // 로그인 실패
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -52,6 +56,16 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     }
+  }
+
+  Map<String, dynamic> _decodeJWT(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) {
+      throw Exception('Invalid JWT');
+    }
+
+    final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+    return jsonDecode(payload);
   }
 
   Future<void> checkLoginStatus() async {
