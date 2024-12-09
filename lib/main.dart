@@ -1,3 +1,4 @@
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -14,12 +15,10 @@ import 'package:focus/screens/waitingRoom.dart';
 import 'package:focus/screens/waitingRoom2.dart';
 import 'package:focus/screens/concentrateScreen.dart';
 import 'package:focus/screens/dailyReport.dart';
+import 'package:focus/widgets/auth_guard.dart';
 import 'package:focus/widgets/header.dart';
 import 'package:focus/screens/myPage.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/status.dart' as status;
-import 'package:focus/screens/websocket_test_page.dart';
-
+import 'package:focus/widgets/websocket_manager.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,20 +33,25 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/', // 기본 경로
       routes: {
-        '/': (context) => const MainScreen(), // 메인 화면
+        '/': (context) => AuthGuard(child: const MainScreen()), // 메인 화면 보호
         '/login': (context) => const LoginScreen(), // 로그인 화면
         '/register': (context) => RegisterScreen(), // 회원가입 화면
-        '/register/info1': (context) => const Info1Screen(), // 회원가입 정보1
-        '/register/info2': (context) => const Info2Screen(), // 회원가입 정보2
-        '/register/info3': (context) => const Info3Screen(), // 회원가입 정보3
-        '/register/info4': (context) => const Info4Screen(), // 회원가입 정보4
-        '/register/info5': (context) => const Info5Screen(), // 회원가입 정보5
-        '/planner': (context) => const PlannerScreen(userId: 1, date: 2024-12-05), // 플래너 화면
-        '/waitingRoom': (context) => const WaitingRoom(), // 대기실 화면
-        '/waitingRoom2': (context) => const WaitingRoom2(), // 대기실 2 화면
-        '/concentrateScreen': (context) => const ConcentrateScreen(), // 집중 화면
-        '/dailyReport': (context) => DailyReportScreen(userId: 1, date: "2024-12-05"), // 일일 리포트 화면
-        '/myPage': (context) => const MyPageScreen(),
+        '/register/info1': (context) => const Info1Screen(),
+        '/register/info2': (context) => const Info2Screen(),
+        '/register/info3': (context) => const Info3Screen(),
+        '/register/info4': (context) => const Info4Screen(),
+        '/register/info5': (context) => const Info5Screen(),
+        '/planner': (context) => AuthGuard(
+          child: const PlannerScreen(userId: 1, date: 2024 - 12 - 05),
+        ), // 플래너 화면 보호
+        '/waitingRoom': (context) => const WaitingRoom(), // 대기실 화면 보호
+        '/waitingRoom2': (context) => const WaitingRoom2(), // 대기실 2 화면 보호
+        '/concentrateScreen': (context) =>
+        const ConcentrateScreen(), // 집중 화면 보호
+        '/dailyReport': (context) => AuthGuard(
+          child: DailyReportScreen(userId: 1, date: "2024-12-05"),
+        ), // 일일 리포트 화면 보호
+        '/myPage': (context) => AuthGuard(child: const MyPageScreen()), // 마이페이지 보호
       },
       onUnknownRoute: (settings) {
         // 잘못된 경로 처리
@@ -68,7 +72,16 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final PageController _pageController = PageController(initialPage: 0);
-  late WebSocketChannel _channel;
+  final WebSocketManager _webSocketManager = WebSocketManager(); // WebSocket 매니저 초기화
+
+
+  @override
+  void initState() {
+    super.initState();
+    _webSocketManager.connect(); // WebSocket 연결
+  }
+
+  // ignore: unused_field
   int _currentIndex = 0;
 
   final List<String> _images = [
@@ -78,54 +91,10 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-
-    // WebSocket 초기화
-    _channel = WebSocketChannel.connect(
-      Uri.parse('wss://your-websocket-server-url'),
-    );
-
-    // WebSocket 메시지 수신 리스너
-    _channel.stream.listen(
-          (message) {
-        print('Received from WebSocket: $message');
-        // WebSocket에서 받은 메시지를 처리할 수 있습니다.
-      },
-      onError: (error) {
-        print('WebSocket Error: $error');
-      },
-      onDone: () {
-        print('WebSocket connection closed.');
-      },
-    );
-
-    // 슬라이드 타이머 설정
-    Timer.periodic(const Duration(seconds: 5), (Timer timer) {
-      if (_currentIndex < _images.length - 1) {
-        _currentIndex++;
-      } else {
-        _currentIndex = 0;
-      }
-      _pageController.animateToPage(
-        _currentIndex,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    });
-  }
-
-  @override
   void dispose() {
     _pageController.dispose();
-    _channel.sink.close(status.normalClosure); // WebSocket 연결 닫기
+    _webSocketManager.disconnect(); // WebSocket 종료
     super.dispose();
-  }
-
-  // WebSocket 메시지 전송 함수
-  void _sendMessage(String message) {
-    _channel.sink.add(message);
-    print('Sent to WebSocket: $message');
   }
 
   @override
@@ -393,20 +362,14 @@ class _TopBlock extends StatelessWidget {
           ),
           const SizedBox(height: 29),
           ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const WaitingRoom(),
-                ),
-              );
-            },
+            onPressed: onMeasureTap,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4C9BB8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(40),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
+              padding: const EdgeInsets.symmetric(
+                  vertical: 16.0, horizontal: 32.0),
             ),
             child: const Text(
               "측정 시작하기",

@@ -2,6 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
+  static final AuthService _instance = AuthService._internal();
+
+  factory AuthService() => _instance;
+
+  AuthService._internal();
+
   final String baseUrl = "http://52.78.38.195";
 
   String? accessToken;
@@ -70,7 +76,7 @@ class AuthService {
     return {};
   }
 
-  // 로그인 상태 확인
+  // 로그인 상태 확인 (인스턴스 메서드로 변경)
   bool isLoggedIn() {
     return accessToken != null;
   }

@@ -9,17 +9,26 @@ class AuthGuard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authService = AuthService(); // 싱글톤 인스턴스 가져오기
+
     return FutureBuilder<bool>(
-      future: AuthService.isLoggedIn(),
+      future: Future.value(authService.isLoggedIn()), // 로그인 상태 확인
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator()); // 로딩 중
         }
 
         if (snapshot.data == true) {
-          return child; // 로그인 상태면 화면 반환
+          return child; // 로그인 상태면 자식 위젯 반환
         } else {
-          return const LoginScreen(); // 비로그인 상태면 로그인 화면
+          // 비로그인 상태면 로그인 화면으로 리다이렉트
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
+          });
+          return const SizedBox.shrink(); // 빈 화면 반환
         }
       },
     );
