@@ -1,3 +1,5 @@
+import 'dart:html';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
@@ -13,8 +15,8 @@ class _WebSocketTestPageState extends State<WebSocketTestPage> {
   late WebSocketChannel channel;
   final TextEditingController userIdController = TextEditingController();
   final TextEditingController titleController = TextEditingController();
-  final TextEditingController imageController = TextEditingController();
   String serverResponse = "No response yet.";
+  Uint8List? binaryData;
 
   @override
   void initState() {
@@ -48,17 +50,47 @@ class _WebSocketTestPageState extends State<WebSocketTestPage> {
     );
   }
 
-  void testWebSocketConnection(String userId, String title, String image) {
-    final Map<String, dynamic> data = {
+  void testWebSocketConnection(String userId, String title) {
+    if (binaryData == null) {
+      setState(() {
+        serverResponse = "No binary data selected.";
+      });
+      return;
+    }
+
+    // Combine metadata and binary data
+    final Map<String, dynamic> metadata = {
       'userId': userId,
       'title': title,
-      'image': image,
     };
+    final metadataJson = Uint8List.fromList(metadata.toString().codeUnits);
 
-    // Send data to the WebSocket server
-    channel.sink.add(data.toString());
+    // Send metadata followed by binary data
+    channel.sink.add(metadataJson);
+    channel.sink.add(binaryData!);
+
     setState(() {
-      serverResponse = "Data sent: $data";
+      serverResponse = "Binary data sent with metadata: $metadata";
+    });
+  }
+
+  void selectBinaryFile() {
+    final fileInput = FileUploadInputElement();
+    fileInput.accept = "image/*";
+    fileInput.click();
+
+    fileInput.onChange.listen((event) {
+      final files = fileInput.files;
+      if (files != null && files.isNotEmpty) {
+        final reader = FileReader();
+        reader.readAsArrayBuffer(files[0]);
+
+        reader.onLoadEnd.listen((_) {
+          setState(() {
+            binaryData = reader.result as Uint8List?;
+          });
+        });
+      }
     });
   }
 
@@ -68,7 +100,6 @@ class _WebSocketTestPageState extends State<WebSocketTestPage> {
     channel.sink.close(status.goingAway);
     userIdController.dispose();
     titleController.dispose();
-    imageController.dispose();
     super.dispose();
   }
 
@@ -88,26 +119,26 @@ class _WebSocketTestPageState extends State<WebSocketTestPage> {
               controller: titleController,
               decoration: const InputDecoration(labelText: "Title"),
             ),
-            TextField(
-              controller: imageController,
-              decoration: const InputDecoration(labelText: "Image (Base64)"),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: selectBinaryFile,
+              child: const Text("Select Binary File"),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 final userId = userIdController.text.trim();
                 final title = titleController.text.trim();
-                final image = imageController.text.trim();
 
-                if (userId.isNotEmpty && title.isNotEmpty && image.isNotEmpty) {
-                  testWebSocketConnection(userId, title, image);
+                if (userId.isNotEmpty && title.isNotEmpty) {
+                  testWebSocketConnection(userId, title);
                 } else {
                   setState(() {
-                    serverResponse = "All fields are required.";
+                    serverResponse = "User ID and Title are required.";
                   });
                 }
               },
-              child: const Text("Send Data to WebSocket"),
+              child: const Text("Send Binary Data to WebSocket"),
             ),
             const SizedBox(height: 20),
             Text(

@@ -1,8 +1,10 @@
 import 'dart:html';
 import 'dart:async';
+import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:js/js_util.dart';
 
 class ConcentrateScreen extends StatefulWidget {
   const ConcentrateScreen({Key? key}) : super(key: key);
@@ -45,8 +47,8 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   // Initialize webcam
   Future<void> _initializeWebcam() async {
     videoElement = VideoElement()
-      ..width = 320
-      ..height = 240
+      ..width = 640
+      ..height = 480
       ..autoplay = true;
 
     try {
@@ -66,7 +68,9 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
 
     try {
       webSocketChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
-      webSocketStatus = "Connected";
+      setState(() {
+        webSocketStatus = "Connected";
+      });
 
       webSocketChannel!.stream.listen((message) {
         setState(() {
@@ -100,15 +104,55 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     });
   }
 
-  // 메시지 전송
-  void _sendMessage() {
-    if (webSocketChannel != null) {
-      final message = jsonEncode({'user_id': 1, 'title': 'test_title', 'message': 'Hello Server!'});
-      webSocketChannel!.sink.add(message);
-      setState(() {
-        messages.add("Sent: $message");
-      });
-    }
+  // Blob을 ArrayBuffer로 변환
+  Future<ByteBuffer> _blobToArrayBuffer(Blob blob) {
+    return promiseToFuture(callMethod(blob, 'arrayBuffer', []));
+  }
+
+  void _captureAndSendImage() {
+    if (!isWebcamInitialized || isPaused) return;
+
+    final canvas = CanvasElement(width: 640, height: 480);
+    final ctx = canvas.context2D;
+    ctx.drawImage(videoElement, 0, 0);
+
+    canvas.toBlob().then((blob) async {
+      if (blob == null) {
+        print("Error: Failed to capture frame as blob.");
+        return;
+      }
+
+      try {
+        // Convert Blob to ByteBuffer
+        final arrayBuffer = await _blobToArrayBuffer(blob);
+        final imageBytes = Uint8List.view(arrayBuffer);
+
+        // JSON 메타데이터 생성
+        final metadata = jsonEncode({
+          'user_id': 1,
+          'title': 'TABA',
+        });
+
+        // JSON 메타데이터를 바이너리로 변환
+        final metadataBytes = Uint8List.fromList(utf8.encode(metadata + '\n'));
+
+        // JSON 메타데이터와 이미지 데이터를 합침
+        final combinedBuffer = Uint8List(metadataBytes.length + imageBytes.length);
+        combinedBuffer.setAll(0, metadataBytes);
+        combinedBuffer.setAll(metadataBytes.length, imageBytes);
+
+        // WebSocket으로 전송
+        print("Sending metadata: $metadata");
+        print("Image size: ${imageBytes.length} bytes");
+
+        webSocketChannel?.sink.add(combinedBuffer);
+        print("Combined metadata and image sent to WebSocket.");
+      } catch (e) {
+        print("Error processing image blob: $e");
+      }
+    }).catchError((error) {
+      print("Error converting canvas to Blob: $error");
+    });
   }
 
   void _startCapturing() {
@@ -118,11 +162,11 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       isCapturing = true;
     });
 
-    captureTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    captureTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (!isCapturing || isPaused) {
         timer.cancel();
       } else {
-        _captureFrame();
+        _captureAndSendImage();
       }
     });
   }
@@ -141,33 +185,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     setState(() {
       isPaused = !isPaused;
     });
-  }
-
-  void _captureFrame() {
-    if (!isWebcamInitialized || isPaused) return;
-
-    final canvas = CanvasElement(width: 80, height: 60); // 크기를 80x60으로 축소
-    final ctx = canvas.context2D;
-    ctx.drawImage(videoElement, 0, 0);
-
-    final base64Image = canvas.toDataUrl('image/jpeg', 0.5).split(',').last;
-
-    try {
-      final decoded = base64Decode(base64Image);
-      print("Decoded image size: ${decoded.length} bytes");
-    } catch (e) {
-      print("Base64 decoding failed: $e");
-      return;
-    }
-
-    final data = {
-      'user_id': 1,
-      'title': 'test_title',
-      'image': base64Image,
-    };
-
-    webSocketChannel?.sink.add(jsonEncode(data));
-    print('Data sent to WebSocket');
   }
 
   void _switchMode() {
@@ -256,11 +273,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                     backgroundColor: isPaused ? Colors.orange : Colors.blue,
                   ),
                   child: Text(isPaused ? "Resume" : "Pause"),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _sendMessage,
-                  child: const Text("Send Test Message"),
                 ),
               ],
             ),
