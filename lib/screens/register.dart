@@ -84,6 +84,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  void handleRegister() async {
+    final response = await http.post(
+      Uri.parse('http://52.78.38.195/api/register'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "email": emailController.text.trim(),
+        "password": passwordController.text.trim(),
+        "username": nicknameController.text.trim(),
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("회원가입 완료"),
+          content: const Text("회원가입이 완료되었습니다. 로그인 화면으로 이동합니다."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // 다이얼로그 닫기
+                Navigator.pop(context); // 로그인 화면으로 이동
+              },
+              child: const Text("확인"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      final error = jsonDecode(response.body)['message'] ?? '회원가입 실패';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+    }
+  }
+
   Future<void> _checkEmail() async {
     final email = emailController.text.trim();
 
@@ -161,8 +197,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               Header(),
               const SizedBox(height: 55),
-              Center(
-                child: const Text(
+              const Center(
+                child: Text(
                   "회원가입",
                   style: TextStyle(
                     fontSize: 28,
@@ -238,7 +274,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 55),
                     Center(
                       child: GestureDetector(
-                        onTap: _register,
+                        onTap: handleRegister,
                         child: Container(
                           width: 737,
                           height: 75,

@@ -2,6 +2,8 @@ import 'dart:html';
 import 'package:flutter/material.dart';
 import 'dart:ui_web' as ui;
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 class WaitingRoom extends StatelessWidget {
   const WaitingRoom({Key? key}) : super(key: key);
 
@@ -12,8 +14,8 @@ class WaitingRoom extends StatelessWidget {
       'webcam-view',
           (int viewId) {
         final video = VideoElement()
-          ..width = 320
-          ..height = 240
+          ..width = 640
+          ..height = 480
           ..autoplay = true;
 
         // Get user media (webcam stream)
@@ -88,9 +90,17 @@ class WaitingRoom extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: () {
-                    // Navigate to WaitingRoom2 using route-based navigation
-                    Navigator.pushNamed(context, '/waitingRoom2');
+                  onPressed: () async {
+                    const storage = FlutterSecureStorage();
+                    String? isLoggedIn = await storage.read(key: 'isLoggedIn');
+
+                    if (isLoggedIn == 'true') {
+                      // 로그인 상태라면 WaitingRoom2로 이동
+                      Navigator.pushReplacementNamed(context, '/waitingRoom2');
+                    } else {
+                      // 로그인 상태가 아니면 Login 화면으로 이동
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
                   },
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.all(Colors.blue), // Button color

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:focus/services/auth_service.dart';
-import 'package:focus/screens/login.dart';
 
 class AuthGuard extends StatelessWidget {
   final Widget child;
 
-  const AuthGuard({required this.child, Key? key }) : super(key: key);
+  const AuthGuard({required this.child, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +22,7 @@ class AuthGuard extends StatelessWidget {
         } else {
           // 비로그인 상태면 로그인 화면으로 리다이렉트
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            );
+            Navigator.pushReplacementNamed(context, '/login');
           });
           return const SizedBox.shrink(); // 빈 화면 반환
         }

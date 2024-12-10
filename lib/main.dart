@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:focus/screens/errorScreen.dart';
 import 'package:focus/screens/login.dart';
 import 'package:focus/screens/register.dart';
@@ -18,7 +19,6 @@ import 'package:focus/screens/dailyReport.dart';
 import 'package:focus/widgets/auth_guard.dart';
 import 'package:focus/widgets/header.dart';
 import 'package:focus/screens/myPage.dart';
-import 'package:focus/widgets/websocket_manager.dart';
 
 void main() {
   runApp(const MyApp());
@@ -70,16 +70,36 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  final PageController _pageController = PageController(initialPage: 0);
-  final WebSocketManager _webSocketManager = WebSocketManager(); // WebSocket 매니저 초기화
+  final PageController _pageController = PageController(initialPage: 0);// WebSocket 매니저 초기화
   String username = "Guest";
 
   @override
   void initState() {
-    super.initState();
-    _webSocketManager.connect(); // WebSocket 연결
+    super.initState();// WebSocket 연결
+    _checkLoginStatus();
     _fetchUsername();
   }
+
+  Future<void> _checkLoginStatus() async {
+    try {
+      const storage = FlutterSecureStorage();
+      String? isLoggedIn = await storage.read(key: 'isLoggedIn');
+      String? storedUsername = await storage.read(key: 'username');
+      setState(() {
+        if (isLoggedIn == 'true' && storedUsername != null) {
+          username = storedUsername;
+        } else {
+          username = 'Guest';
+        }
+      });
+    } catch (e) {
+      print('Error checking login status: $e');
+      setState(() {
+        username = 'Guest';
+      });
+    }
+  }
+
 
   Future<void> _fetchUsername() async {
     // Simulating fetching username from secure storage or API
@@ -100,8 +120,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   void dispose() {
-    _pageController.dispose();
-    _webSocketManager.disconnect(); // WebSocket 종료
+    _pageController.dispose(); // WebSocket 종료
     super.dispose();
   }
 
@@ -352,13 +371,30 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 class _TopBlock extends StatelessWidget {
-  final VoidCallback onMeasureTap;
   final String username; // Accept username
 
   const _TopBlock({
-    required this.onMeasureTap,
-    required this.username, // Initialize username
+    required this.username, required onMeasureTap, // Initialize username
   });
+
+  Future<void> _handleMeasureTap(BuildContext context) async {
+    const storage = FlutterSecureStorage();
+    String? isLoggedIn = await storage.read(key: 'isLoggedIn');
+
+    if (isLoggedIn == 'true') {
+      // 로그인 상태라면 측정 화면으로 이동
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const WaitingRoom()),
+      );
+    } else {
+      // 로그인 상태가 아니라면 로그인 화면으로 이동
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -401,7 +437,7 @@ class _TopBlock extends StatelessWidget {
           ),
           const SizedBox(height: 29),
           ElevatedButton(
-            onPressed: onMeasureTap,
+            onPressed: () => _handleMeasureTap(context), // Updated onPressed
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4C9BB8),
               shape: RoundedRectangleBorder(
