@@ -23,15 +23,37 @@ class _LoginScreenState extends State<LoginScreen> {
     String password = passwordController.text;
 
     final response = await http.post(
-      Uri.parse('/api/sign-in'),
+      Uri.parse('http://52.78.38.195/api/sign-in'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"email": email, "password": password}),
     );
+    // 이메일 유효성 검사
+    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("유효하지 않은 이메일"),
+          content: const Text("올바른 이메일 형식을 입력하세요."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("확인"),
+            ),
+          ],
+        ),
+      );
+      return; // 유효하지 않은 경우 더 이상 진행하지 않음
+    }
+    print("Response Code: ${response.statusCode}");
+    print("Response Body: ${response.body}");
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
       final accessToken = responseData['accessToken'];
       final username = _decodeJWT(accessToken)['username']; // Extract username from token
+
+      print("Access Token: $accessToken");
+      print("Username: $username");
 
       await storage.write(key: 'accessToken', value: accessToken);
       await storage.write(key: 'username', value: username);

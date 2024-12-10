@@ -42,13 +42,13 @@ class MyApp extends StatelessWidget {
         '/register/info4': (context) => const Info4Screen(),
         '/register/info5': (context) => const Info5Screen(),
         '/planner': (context) => AuthGuard(
-          child: const PlannerScreen(userId: 1, date: 2024 - 12 - 05),
+          child: PlannerScreen(userId: 1, date: DateTime.now()),
         ), // 플래너 화면 보호
         '/waitingRoom': (context) => AuthGuard(child: const WaitingRoom()),
-        '/waitingRoom2': (context) => AuthGuard(child: const WaitingRoom2()),// 대기실 2 화면 보호
+        '/waitingRoom2': (context) => AuthGuard(child: const WaitingRoom2(userId: 1, date: '2024-12-05')),// 대기실 2 화면 보호
         '/concentrateScreen': (context) => AuthGuard(child: const ConcentrateScreen()), // 집중 화면 보호
         '/dailyReport': (context) => AuthGuard(
-          child: DailyReportScreen(userId: 1, date: "2024-12-05"),
+          child: DailyReportScreen(userId: 1, date: '2024-12-05'),
         ), // 일일 리포트 화면 보호
         '/myPage': (context) => AuthGuard(child: const MyPageScreen()), // 마이페이지 보호
       },
@@ -72,12 +72,21 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   final PageController _pageController = PageController(initialPage: 0);
   final WebSocketManager _webSocketManager = WebSocketManager(); // WebSocket 매니저 초기화
-
+  String username = "Guest";
 
   @override
   void initState() {
     super.initState();
     _webSocketManager.connect(); // WebSocket 연결
+    _fetchUsername();
+  }
+
+  Future<void> _fetchUsername() async {
+    // Simulating fetching username from secure storage or API
+    final fetchedUsername = await Future.value("John Doe"); // Replace with actual fetch logic
+    setState(() {
+      username = fetchedUsername;
+    });
   }
 
   // ignore: unused_field
@@ -107,16 +116,42 @@ class _MainScreenState extends State<MainScreen> {
             children: [
               Header(
                 onPlannerTap: () {
-                  Navigator.pushNamed(context, '/planner');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PlannerScreen(
+                        userId: 1, // Replace with actual user ID
+                        date: DateTime.now(), // Current date
+                      ),
+                    ),
+                  );
                 },
                 onLoginTap: () {
-                  Navigator.pushNamed(context, '/login');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                  );
                 },
                 onRegisterTap: () {
-                  Navigator.pushNamed(context, '/register');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RegisterScreen(),
+                    ),
+                  );
                 },
                 onMyReportTap: () {
-                  Navigator.pushNamed(context, '/dailyReport'); // 마이리포트로 연결
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DailyReportScreen(
+                        userId: 1, // Replace with actual user ID
+                        date: "2024-12-05", // Example date in string format
+                      ),
+                    ),
+                  );
                 },
               ),
               Stack(
@@ -146,7 +181,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       );
                     },
-                    username: username ?? "Guest"
+                    username: username,
                   ),
                 ],
               ),

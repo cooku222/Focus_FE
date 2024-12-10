@@ -5,7 +5,7 @@ import 'package:focus/screens/login.dart';
 class AuthGuard extends StatelessWidget {
   final Widget child;
 
-  const AuthGuard({required this.child, Key? key}) : super(key: key);
+  const AuthGuard({required this.child, Key? key }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
