@@ -3,7 +3,6 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
-import 'waitingRoom2.dart'; // Import WaitingRoom2
 
 class PlannerScreen extends StatefulWidget {
   final int userId;
@@ -81,14 +80,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
     return [];
   }
 
-  void _navigateToWaitingRoom() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => WaitingRoom2(userId: 1, date: '2024-12-09'),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,12 +150,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   ),
                 ),
               ],
-            ),
-          ),
-          Center(
-            child: ElevatedButton(
-              onPressed: _navigateToWaitingRoom,
-              child: const Text("Proceed to Waiting Room"),
             ),
           ),
         ],

@@ -1,7 +1,6 @@
 import 'dart:html';
 import 'package:flutter/material.dart';
 import 'dart:ui_web' as ui;
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class WaitingRoom extends StatelessWidget {

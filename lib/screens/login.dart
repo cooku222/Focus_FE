@@ -25,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://52.78.38.195/api/sign-in'),
+        Uri.parse('http://3.38.191.196/api/sign-in'),
         headers: {
           "Content-Type": "application/json",
         },

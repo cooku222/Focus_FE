@@ -5,9 +5,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:js/js_util.dart';
+import 'package:http/http.dart' as http;
 
 class ConcentrateScreen extends StatefulWidget {
-  const ConcentrateScreen({Key? key}) : super(key: key);
+  const ConcentrateScreen({Key? key, required this.userId, required this.title}) : super(key: key);
+
+  final int userId;
+  final String title;
 
   @override
   State<ConcentrateScreen> createState() => _ConcentrateScreenState();
@@ -16,13 +20,14 @@ class ConcentrateScreen extends StatefulWidget {
 class _ConcentrateScreenState extends State<ConcentrateScreen> {
   late VideoElement videoElement;
   WebSocketChannel? webSocketChannel;
+  Timer? captureTimer;
+  Timer? clockTimer;
 
   bool isWebcamInitialized = false;
   bool isCapturing = false;
   bool isPaused = false;
-  bool isNotificationMode = false; // Toggle between modes
-  Timer? captureTimer;
-  Timer? clockTimer;
+  bool isSessionActive = false;
+  int? sessionId;
 
   String currentTime = '';
   String displayMode = 'Default'; // Modes: 'Default', 'Fullscreen'
@@ -34,7 +39,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     super.initState();
     _initializeWebcam();
     _startClock();
-    _connectToWebSocket();
   }
 
   @override
@@ -42,9 +46,11 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     captureTimer?.cancel();
     clockTimer?.cancel();
     webSocketChannel?.sink.close();
+    videoElement.srcObject?.getTracks().forEach((track) => track.stop());
     super.dispose();
   }
 
+  // Initialize webcam
   Future<void> _initializeWebcam() async {
     videoElement = VideoElement()
       ..width = 640
@@ -62,31 +68,76 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     }
   }
 
-  void _connectToWebSocket() {
-    final wsUrl = 'ws://3.38.191.196/image';
+  // Start the clock
+  void _startClock() {
+    clockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        currentTime = DateTime.now().toLocal().toIso8601String().split('T').first;
+      });
+    });
+  }
 
+  // Start session
+  Future<void> _startSession() async {
     try {
-      webSocketChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
+      final response = await http.post(
+        Uri.parse("http://3.38.191.196/api/video-session/start"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "user_id": widget.userId,
+          "title": widget.title,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        sessionId = responseData['sessionId'];
+        setState(() {
+          isSessionActive = true;
+        });
+        print("Session started successfully with ID: $sessionId");
+
+        _connectToWebSocket();
+        _startCapturing();
+      } else {
+        print("Failed to start session: ${response.statusCode} ${response.body}");
+      }
+    } catch (e) {
+      print("Error starting session: $e");
+    }
+  }
+
+  // Connect to WebSocket
+  void _connectToWebSocket() {
+    try {
+      webSocketChannel = WebSocketChannel.connect(
+        Uri.parse("ws://3.38.191.196/image"),
+      );
+
       setState(() {
         webSocketStatus = "Connected";
       });
 
-      webSocketChannel!.stream.listen((message) {
-        setState(() {
-          messages.add("Received: $message");
-        });
-        print("Message from server: $message");
-      }, onError: (error) {
-        setState(() {
-          webSocketStatus = "Error: $error";
-        });
-        print("WebSocket Error: $error");
-      }, onDone: () {
-        setState(() {
-          webSocketStatus = "Disconnected";
-        });
-        print("WebSocket connection closed.");
-      });
+      webSocketChannel!.stream.listen(
+            (message) {
+          setState(() {
+            messages.add("Received: $message");
+          });
+          print("Message from server: $message");
+        },
+        onError: (error) {
+          setState(() {
+            webSocketStatus = "Error: $error";
+          });
+          print("WebSocket error: $error");
+        },
+        onDone: () {
+          setState(() {
+            webSocketStatus = "Disconnected";
+          });
+          print("WebSocket connection closed.");
+        },
+      );
     } catch (e) {
       setState(() {
         webSocketStatus = "Failed to connect: $e";
@@ -95,17 +146,57 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     }
   }
 
-  void _startClock() {
-    clockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        currentTime = DateTime.now().toLocal().toIso8601String().split('T').last.split('.').first;
-      });
+  // End session
+  Future<void> _endSession() async {
+    if (sessionId == null) return;
+
+    try {
+      final response = await http.post(
+        Uri.parse("http://3.38.191.196/api/video-session/end/$sessionId"),
+      );
+
+      if (response.statusCode == 200) {
+        print("Session ended successfully.");
+        setState(() {
+          isSessionActive = false;
+          isCapturing = false;
+        });
+      } else {
+        print("Failed to end session: ${response.body}");
+      }
+    } catch (e) {
+      print("Error ending session: $e");
+    }
+  }
+
+  // Fetch session summary
+  Future<void> _fetchSessionSummary() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://3.38.191.196/api/video-session/${widget.userId}/$currentTime"),
+      );
+
+      if (response.statusCode == 200) {
+        final summary = jsonDecode(response.body);
+        print("Session Summary: $summary");
+      } else {
+        print("Failed to fetch session summary: ${response.body}");
+      }
+    } catch (e) {
+      print("Error fetching session summary: $e");
+    }
+  }
+
+  // Start capturing
+  void _startCapturing() {
+    captureTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (!isCapturing || !isSessionActive || sessionId == null) return;
+      _captureAndSendImage();
     });
   }
 
+  // Capture and send image
   void _captureAndSendImage() {
-    if (!isWebcamInitialized || isPaused) return;
-
     final canvas = CanvasElement(width: 640, height: 480);
     final ctx = canvas.context2D;
     ctx.drawImage(videoElement, 0, 0);
@@ -121,9 +212,8 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
         final imageBytes = Uint8List.view(arrayBuffer);
 
         final metadata = jsonEncode({
-          'user_id': 1,
-          'title': 'TABA',
-          'mode': isNotificationMode ? 'real-time' : 'focus',
+          'session_id': sessionId,
+          'timestamp': DateTime.now().toIso8601String(),
         });
 
         final metadataBytes = Uint8List.fromList(utf8.encode(metadata + '\n'));
@@ -132,7 +222,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
         combinedBuffer.setAll(metadataBytes.length, imageBytes);
 
         webSocketChannel?.sink.add(combinedBuffer);
-        print("Metadata and image sent in ${isNotificationMode ? 'real-time' : 'focus'} mode.");
+        print("Image and metadata sent to WebSocket.");
       } catch (e) {
         print("Error processing image blob: $e");
       }
@@ -145,109 +235,36 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     return promiseToFuture(callMethod(blob, 'arrayBuffer', []));
   }
 
-  void _startCapturing() {
-    if (isCapturing || !isWebcamInitialized || isPaused) return;
-
-    setState(() {
-      isCapturing = true;
-    });
-
-    captureTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (!isCapturing || isPaused) {
-        timer.cancel();
-      } else {
-        _captureAndSendImage();
-      }
-    });
-  }
-
-  void _stopCapturing() {
-    if (!isCapturing) return;
-
-    setState(() {
-      isCapturing = false;
-    });
-
-    captureTimer?.cancel();
-  }
-
-  void _toggleMode() {
-    setState(() {
-      isNotificationMode = !isNotificationMode;
-      messages.clear(); // Clear messages for the new mode
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF242424),
+      appBar: AppBar(
+        title: Text("Concentration - ${widget.title}"),
+      ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Current Time: $currentTime",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: _toggleMode,
-                  child: Text(isNotificationMode ? "Switch to Focus Mode" : "Switch to Real-Time Mode"),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: isWebcamInitialized
-                ? Center(
-              child: Container(
-                width: displayMode == 'Fullscreen' ? double.infinity : 320,
-                height: displayMode == 'Fullscreen' ? double.infinity : 240,
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
+          if (isWebcamInitialized)
+            Expanded(
+              child: Center(
                 child: HtmlElementView(viewType: 'webcam-view'),
               ),
-            )
-                : const Center(child: CircularProgressIndicator()),
-          ),
-          if (isWebcamInitialized)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: _startCapturing,
-                  child: Text(isCapturing ? "Capturing..." : "Start Capturing"),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _stopCapturing,
-                  child: const Text("Stop Capturing"),
-                ),
-              ],
             ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.builder(
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Text(
-                    messages[index],
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                );
-              },
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: isSessionActive ? null : _startSession,
+                child: const Text("Start Session"),
+              ),
+              ElevatedButton(
+                onPressed: isSessionActive ? _endSession : null,
+                child: const Text("End Session"),
+              ),
+              ElevatedButton(
+                onPressed: isSessionActive ? _fetchSessionSummary : null,
+                child: const Text("Fetch Summary"),
+              ),
+            ],
           ),
         ],
       ),
