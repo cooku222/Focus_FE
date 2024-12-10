@@ -28,7 +28,7 @@ class _WeeklyReportScreenState extends State<WeeklyReportScreen> {
   }
 
   Future<void> fetchWeeklyReport() async {
-    final url = 'http://52.78.38.195/api/weekly-report/${widget.userId}/${widget.startDate}/summary';
+    final url = 'http://3.38.191.196/api/weekly-report/${widget.userId}/${widget.startDate}/summary';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {

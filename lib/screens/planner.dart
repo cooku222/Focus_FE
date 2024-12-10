@@ -44,7 +44,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
     final String formattedDate =
         "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
     final String apiUrl =
-        "http://52.78.38.195/api/planner/${widget.userId}/$formattedDate";
+        "http://3.38.191.196/api/planner/${widget.userId}/$formattedDate";
 
     try {
       final response = await http.get(Uri.parse(apiUrl));

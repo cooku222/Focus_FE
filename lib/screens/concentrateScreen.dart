@@ -63,7 +63,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   }
 
   void _connectToWebSocket() {
-    final wsUrl = 'ws://52.78.38.195/image';
+    final wsUrl = 'ws://3.38.191.196/image';
 
     try {
       webSocketChannel = WebSocketChannel.connect(Uri.parse(wsUrl));

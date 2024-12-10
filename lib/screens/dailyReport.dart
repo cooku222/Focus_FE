@@ -29,7 +29,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
   }
 
   Future<void> fetchDailyReport() async {
-    final url = 'http://52.78.38.195/api/daily-report/${widget.userId}/${widget.date}/summary';
+    final url = 'http://3.38.191.196/api/daily-report/${widget.userId}/${widget.date}/summary';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
