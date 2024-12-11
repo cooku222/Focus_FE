@@ -4,14 +4,14 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:js/js_util.dart';
 import 'package:http/http.dart' as http;
+import 'package:js/js_util.dart';
 
 class ConcentrateScreen extends StatefulWidget {
-  const ConcentrateScreen({Key? key, required this.userId, required this.title}) : super(key: key);
-
   final int userId;
   final String title;
+
+  const ConcentrateScreen({Key? key, required this.userId, required this.title}) : super(key: key);
 
   @override
   State<ConcentrateScreen> createState() => _ConcentrateScreenState();
@@ -27,12 +27,12 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   bool isCapturing = false;
   bool isPaused = false;
   bool isSessionActive = false;
+  bool isSessionStarted = false; // Guard variable to prevent duplicate sessions
   int? sessionId;
 
   String currentTime = '';
-  String displayMode = 'Default'; // Modes: 'Default', 'Fullscreen'
-  String webSocketStatus = "Connecting...";
-  List<String> messages = [];
+  String currentDate = '';
+  Duration elapsedTime = Duration.zero;
 
   @override
   void initState() {
@@ -50,7 +50,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     super.dispose();
   }
 
-  // Initialize webcam
   Future<void> _initializeWebcam() async {
     videoElement = VideoElement()
       ..width = 640
@@ -68,17 +67,23 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     }
   }
 
-  // Start the clock
   void _startClock() {
     clockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final now = DateTime.now();
       setState(() {
-        currentTime = DateTime.now().toLocal().toIso8601String().split('T').first;
+        currentTime = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
+        currentDate = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} (${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][now.weekday - 1]})";
       });
     });
   }
 
-  // Start session
   Future<void> _startSession() async {
+    if (isSessionStarted) return; // Prevent duplicate calls
+
+    setState(() {
+      isSessionStarted = true; // Mark session as started
+    });
+
     try {
       final response = await http.post(
         Uri.parse("http://3.38.191.196/api/video-session/start"),
@@ -94,6 +99,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
         sessionId = responseData['sessionId'];
         setState(() {
           isSessionActive = true;
+          elapsedTime = Duration.zero;
         });
         print("Session started successfully with ID: $sessionId");
 
@@ -107,46 +113,30 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     }
   }
 
-  // Connect to WebSocket
   void _connectToWebSocket() {
     try {
       webSocketChannel = WebSocketChannel.connect(
         Uri.parse("ws://3.38.191.196/image"),
       );
 
-      setState(() {
-        webSocketStatus = "Connected";
-      });
-
       webSocketChannel!.stream.listen(
             (message) {
-          setState(() {
-            messages.add("Received: $message");
-          });
-          print("Message from server: $message");
+          print("Message from WebSocket: $message");
         },
         onError: (error) {
-          setState(() {
-            webSocketStatus = "Error: $error";
-          });
           print("WebSocket error: $error");
         },
         onDone: () {
-          setState(() {
-            webSocketStatus = "Disconnected";
-          });
           print("WebSocket connection closed.");
         },
       );
+
+      print("WebSocket connected.");
     } catch (e) {
-      setState(() {
-        webSocketStatus = "Failed to connect: $e";
-      });
       print("Failed to connect to WebSocket: $e");
     }
   }
 
-  // End session
   Future<void> _endSession() async {
     if (sessionId == null) return;
 
@@ -161,6 +151,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
           isSessionActive = false;
           isCapturing = false;
         });
+        Navigator.pushNamed(context, '/dailyReport');
       } else {
         print("Failed to end session: ${response.body}");
       }
@@ -169,33 +160,20 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     }
   }
 
-  // Fetch session summary
-  Future<void> _fetchSessionSummary() async {
-    try {
-      final response = await http.get(
-        Uri.parse("http://3.38.191.196/api/video-session/${widget.userId}/$currentTime"),
-      );
-
-      if (response.statusCode == 200) {
-        final summary = jsonDecode(response.body);
-        print("Session Summary: $summary");
-      } else {
-        print("Failed to fetch session summary: ${response.body}");
-      }
-    } catch (e) {
-      print("Error fetching session summary: $e");
-    }
-  }
-
-  // Start capturing
   void _startCapturing() {
+    setState(() {
+      isCapturing = true;
+    });
+
     captureTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (!isCapturing || !isSessionActive || sessionId == null) return;
+      if (!isCapturing || isPaused || sessionId == null) return;
       _captureAndSendImage();
+      setState(() {
+        elapsedTime += const Duration(seconds: 2);
+      });
     });
   }
 
-  // Capture and send image
   void _captureAndSendImage() {
     final canvas = CanvasElement(width: 640, height: 480);
     final ctx = canvas.context2D;
@@ -222,7 +200,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
         combinedBuffer.setAll(metadataBytes.length, imageBytes);
 
         webSocketChannel?.sink.add(combinedBuffer);
-        print("Image and metadata sent to WebSocket.");
+        print("Image and metadata sent to WebSocket: $metadata");
       } catch (e) {
         print("Error processing image blob: $e");
       }
@@ -235,36 +213,92 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     return promiseToFuture(callMethod(blob, 'arrayBuffer', []));
   }
 
+  void _pauseCapturing() {
+    setState(() {
+      isPaused = true;
+      isCapturing = false;
+    });
+  }
+
+  void _resumeCapturing() {
+    setState(() {
+      isPaused = false;
+      isCapturing = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Concentration - ${widget.title}"),
-      ),
+      backgroundColor: const Color(0xFF242424),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Text(
+            currentTime,
+            style: const TextStyle(
+              fontSize: 128,
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          Text(
+            currentDate,
+            style: const TextStyle(
+              fontSize: 32,
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          if (isSessionActive)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Text(
+                "Elapsed Time: ${elapsedTime.inSeconds}s",
+                style: const TextStyle(
+                  fontSize: 24,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           if (isWebcamInitialized)
             Expanded(
               child: Center(
                 child: HtmlElementView(viewType: 'webcam-view'),
               ),
             ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: isSessionActive ? null : _startSession,
-                child: const Text("Start Session"),
-              ),
-              ElevatedButton(
-                onPressed: isSessionActive ? _endSession : null,
-                child: const Text("End Session"),
-              ),
-              ElevatedButton(
-                onPressed: isSessionActive ? _fetchSessionSummary : null,
-                child: const Text("Fetch Summary"),
-              ),
-            ],
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton(
+                  onPressed: _pauseCapturing,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF535353),
+                    fixedSize: const Size(248, 88),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: const Text("Pause"),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _endSession,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4C9BB8),
+                    fixedSize: const Size(248, 88),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: const Text("Exit"),
+                ),
+              ],
+            ),
           ),
         ],
       ),
