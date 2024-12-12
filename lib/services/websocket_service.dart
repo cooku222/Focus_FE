@@ -5,7 +5,7 @@ class WebSocketService {
   void testWebSocketConnection(String userId, String title, String image) {
     // WebSocket 서버 URL
     final channel = WebSocketChannel.connect(
-      Uri.parse('ws://52.78.38.195/image'),
+      Uri.parse('ws://3.38.191.196/image'),
     );
 
     // 전송할 데이터

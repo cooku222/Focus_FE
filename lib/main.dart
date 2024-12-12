@@ -1,5 +1,6 @@
 
 import 'dart:async';
+import 'package:focus/utils/jwt_utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/', // 기본 경로
       routes: {
         '/': (context) => const MainScreen(), // 메인 화면 보호
-        '/login': (context) => const LoginScreen(), // 로그인 화면
+        '/login': (context) => const LoginScreen(),
         '/register': (context) => RegisterScreen(), // 회원가입 화면
         '/register/info1': (context) => const Info1Screen(),
         '/register/info2': (context) => const Info2Screen(),
@@ -45,8 +46,24 @@ class MyApp extends StatelessWidget {
           child: PlannerScreen(userId: 1, date: DateTime.now()),
         ), // 플래너 화면 보호
         '/waitingRoom': (context) => AuthGuard(child: const WaitingRoom()),
-        '/waitingRoom2': (context) => AuthGuard(child: const WaitingRoom2()),// 대기실 2 화면 보호
-        '/concentrateScreen': (context) => AuthGuard(child: const ConcentrateScreen(userId: 1, token: '', title: '',)), // 집중 화면 보호
+        '/waitingRoom2': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          return AuthGuard(
+            child: WaitingRoom2(
+              token: args?['token'] ?? '',
+              userId: args?['userId'] ?? -1,
+            ),
+          );
+        },
+// 대기실 2 화면 보호
+        '/concentrateScreen': (context) => AuthGuard(
+          child: ConcentrateScreen(
+            userId: (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>)['userId'],
+            token: (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>)['token'],
+            title: (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>)['title'],
+          ),
+        ),
+        // 집중 화면 보호
         '/dailyReport': (context) => AuthGuard(
           child: DailyReportScreen(userId: 1, date: '2024-12-05'),
         ), // 일일 리포트 화면 보호
@@ -63,6 +80,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
+  final FlutterSecureStorage storage = const FlutterSecureStorage();
   const MainScreen({Key? key}) : super(key: key);
 
   @override
@@ -83,22 +101,40 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _checkLoginStatus() async {
     try {
       const storage = FlutterSecureStorage();
-      String? isLoggedIn = await storage.read(key: 'isLoggedIn');
-      String? storedUsername = await storage.read(key: 'username');
-      setState(() {
-        if (isLoggedIn == 'true' && storedUsername != null) {
-          username = storedUsername;
-        } else {
-          username = 'Guest';
+      String? token = await storage.read(key: 'accessToken'); // Check for the token
+      if (token != null && token.isNotEmpty) {
+        // Decode the token to verify validity
+        final payload = JWTUtils.decodeJWT(token);
+        final userId = payload['sub']; // Assuming 'sub' contains the user ID
+
+        if (userId != null) {
+          print("User is logged in. User ID: $userId");
+          setState(() {
+            username = userId; // Update username with the userId or actual name
+          });
+          return; // Prevent navigation to the login screen
         }
+      }
+
+      // If not logged in, set username to 'Guest'
+      setState(() {
+        username = 'Guest';
+      });
+
+      // Redirect to login screen
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, '/login');
       });
     } catch (e) {
-      print('Error checking login status: $e');
+      print("Error checking login status: $e");
+
+      // Handle login error: set as guest and redirect to login
       setState(() {
         username = 'Guest';
       });
     }
   }
+
 
 
   Future<void> _fetchUsername() async {
@@ -379,22 +415,38 @@ class _TopBlock extends StatelessWidget {
 
   Future<void> _handleMeasureTap(BuildContext context) async {
     const storage = FlutterSecureStorage();
-    String? isLoggedIn = await storage.read(key: 'isLoggedIn');
+    try {
+      // 토큰 읽기
+      final token = await storage.read(key: 'accessToken');
+      if (token != null && token.isNotEmpty) {
+        // JWT 디코딩을 통해 토큰 유효성 확인
+        final payload = JWTUtils.decodeJWT(token);
+        final userId = payload['sub']; // JWT에서 사용자 ID 추출
 
-    if (isLoggedIn == 'true') {
-      // 로그인 상태라면 측정 화면으로 이동
+        if (userId != null) {
+          // 로그인 상태라면 WaitingRoom으로 이동
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const WaitingRoom()),
+          );
+          return;
+        }
+      }
+      // 토큰이 없거나 유효하지 않은 경우 로그인 화면으로 이동
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const WaitingRoom()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
-    } else {
-      // 로그인 상태가 아니라면 로그인 화면으로 이동
+    } catch (e) {
+      print("Error checking login status: $e");
+      // 예외 발생 시 로그인 화면으로 이동
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

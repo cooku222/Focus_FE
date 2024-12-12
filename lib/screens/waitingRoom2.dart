@@ -5,7 +5,7 @@ import 'package:focus/screens/concentrateScreen.dart';
 import 'package:focus/utils/jwt_utils.dart';
 
 class WaitingRoom2 extends StatefulWidget {
-  const WaitingRoom2({Key? key}) : super(key: key);
+  const WaitingRoom2({Key? key, required token, required userId}) : super(key: key);
 
   @override
   State<WaitingRoom2> createState() => _WaitingRoom2State();
@@ -17,40 +17,37 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
   String? token;
 
   @override
-  void initState() {
-    super.initState();
-    _retrieveTokenAndDecode();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _retrieveTokenAndDecode(); // didChangeDependencies에서 호출
   }
 
   Future<void> _retrieveTokenAndDecode() async {
-    const storage = FlutterSecureStorage();
     try {
-      token = await storage.read(key: 'token'); // 토큰 읽기
+      // ModalRoute에서 전달된 인자를 가져옴
+      final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (arguments != null && arguments.containsKey('token')) {
+        token = arguments['token'];
+      }
+
+      // 토큰이 없으면 FlutterSecureStorage에서 읽기
+      if (token == null) {
+        const storage = FlutterSecureStorage();
+        token = await storage.read(key: 'accessToken');
+      }
+
+      // JWT 디코딩 및 userId 설정
       if (token != null) {
-        print("Retrieved token: $token"); // 디버깅: 토큰 출력
-        final payload = JWTUtils.decodeJWT(token!); // JWT 디코딩
-        print("Decoded Payload: $payload"); // 디버깅: 디코딩된 페이로드 출력
-
+        final payload = JWTUtils.decodeJWT(token!);
         setState(() {
-          userId = payload['userId'];
+          userId = payload['user_id'];
         });
-
-        if (userId != null) {
-          print("User ID found: $userId"); // 디버깅: userId 출력
-        } else {
-          print("No userId or sub found in token payload."); // 디버깅: 페이로드에 userId 없음
-          _showLoginError();
-        }
-      } else {
-        print("No token found in storage."); // 디버깅: 토큰 없음
-        _showLoginError();
       }
     } catch (e) {
-      print("Error during token retrieval or decoding: $e"); // 디버깅: 예외 출력
+      print("Error retrieving or decoding token: $e");
       _showLoginError();
     }
   }
-
 
   void _showLoginError() {
     showDialog(
@@ -73,7 +70,6 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
 
   void _navigateToConcentrateScreen() {
     if (_titleController.text.trim().isEmpty) {
-      // Show an error if the title is empty
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -90,18 +86,11 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       return;
     }
 
-    if (userId == null || token == null) {
-      // Show an error if the userId or token is null
-      _showLoginError();
-      return;
-    }
-
-    // Navigate to ConcentrateScreen with userId (as int) and title
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ConcentrateScreen(
-          userId: userId!, // Pass as int
+          userId: userId!,
           token: token!,
           title: _titleController.text.trim(),
         ),
@@ -109,12 +98,10 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF242424), // Black background
+      backgroundColor: const Color(0xFF242424),
       appBar: AppBar(
         title: const Text("Waiting Room"),
         backgroundColor: const Color(0xFF242424),
@@ -161,4 +148,3 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
     );
   }
 }
-

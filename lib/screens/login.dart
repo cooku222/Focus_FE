@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:focus/widgets/header.dart'; // Header 위젯 경로 임포트
-import 'package:focus/utils/jwt_utils.dart'; // JWT 디코딩 유틸리티
+import 'package:focus/widgets/header.dart'; // Header widget import
+import 'package:focus/utils/jwt_utils.dart'; // JWT decoding utility
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  final String? redirectRoute;
+  const LoginScreen({Key? key,  this.redirectRoute}) : super(key: key);
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  static const storage = FlutterSecureStorage(); // FlutterSecureStorage 초기화
+  static const storage = FlutterSecureStorage(); // Secure storage instance
 
   Future<void> handleLogin() async {
     String email = emailController.text.trim();
@@ -31,63 +32,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-
-        // Access Token 추출
         final accessToken = responseData['accessToken'];
         if (accessToken == null) {
           throw Exception("Access token is missing in the response.");
         }
 
-        // JWT 디코딩 및 User ID 추출
-        final payload = JWTUtils.decodeJWT(accessToken);
-        final userId = payload['sub']; // `sub` 키를 User ID로 사용
-        if (userId == null) {
-          throw Exception("User ID is missing in the token.");
-        }
-
-        // Secure Storage에 상태 저장
+        // Save the token securely
         await storage.write(key: 'accessToken', value: accessToken);
-        await storage.write(key: 'isLoggedIn', value: 'true');
-        await storage.write(key: 'userId', value: userId.toString());
+        print("Token saved successfully: $accessToken");
 
-        print("Access Token: $accessToken");
-        print("User ID: $userId");
+        // Decode the JWT
+        final payload = JWTUtils.decodeJWT(accessToken);
+        print("Decoded JWT: $payload");
 
-        // 로그인 성공 후 메인 화면으로 이동
         Navigator.pushReplacementNamed(context, '/');
       } else {
-        _showErrorDialog("로그인 실패", "이메일 또는 비밀번호가 올바르지 않습니다.");
+        print("Login failed. Response: ${response.body}");
+        _showErrorDialog("Login Failed", "Invalid email or password.");
       }
     } catch (e) {
       print("Error during login: $e");
-      _showErrorDialog("로그인 오류", "서버와의 연결에 실패했습니다. 다시 시도해주세요.");
+      _showErrorDialog("Error", "An error occurred during login.");
     }
   }
 
-  Future<void> checkLoginStatus() async {
-    try {
-      // FlutterSecureStorage에서 로그인 정보 확인
-      String? token = await storage.read(key: 'accessToken');
-      if (token != null) {
-        // JWT 디코딩으로 유효성 확인
-        final payload = JWTUtils.decodeJWT(token);
-        final userId = payload['sub']; // sub 키를 User ID로 사용
-        if (userId != null) {
-          print("로그인 상태 확인됨. User ID (sub): $userId");
-          // 로그인 상태면 그대로 유지
-          Navigator.pushReplacementNamed(context, '/');
-        } else {
-          print("토큰 유효하지 않음. 재로그인 필요");
-          await storage.deleteAll();
-        }
-      } else {
-        print("로그인 상태가 아닙니다.");
-      }
-    } catch (e) {
-      print("로그인 상태 확인 오류: $e");
-      await storage.deleteAll();
-    }
-  }
+
+
 
   void _showErrorDialog(String title, String content) {
     showDialog(
@@ -98,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text("확인"),
+            child: const Text("OK"),
           ),
         ],
       ),
@@ -108,8 +78,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // 로그인 상태 확인
-    checkLoginStatus();
   }
 
   @override

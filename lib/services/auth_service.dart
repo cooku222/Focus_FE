@@ -8,7 +8,7 @@ class AuthService {
 
   AuthService._internal();
 
-  final String baseUrl = "http://52.78.38.195";
+  final String baseUrl = "http://3.38.191.196";
 
   String? accessToken;
   String? refreshToken;

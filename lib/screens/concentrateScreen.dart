@@ -10,7 +10,7 @@ import 'package:js/js_util.dart';
 import 'package:focus/utils/jwt_utils.dart'; // JWT 디코더 유틸 추가
 
 class ConcentrateScreen extends StatefulWidget {
-  final int userId; // Updated to int
+  final int userId;
   final String token;
   final String title;
 
@@ -39,16 +39,15 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
 
   String currentTime = '';
   String currentDate = '';
-  String startTime = ''; // For measurement start time
+  String startTime = '';
   Duration elapsedTime = Duration.zero;
 
-  String measurementResult = ''; // 측정 결과 저장
-  Map<String, dynamic>? decodedJWT; // JWT 디코딩 결과
+  Map<String, dynamic>? decodedJWT;
 
   @override
   void initState() {
     super.initState();
-    _decodeJWT(); // JWT 디코딩
+    _decodeJWT();
     _initializeScreen();
   }
 
@@ -62,8 +61,8 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   }
 
   Future<void> _initializeScreen() async {
-    _connectToWebSocket();
     await _startSession();
+    _connectToWebSocket();
     _startCapturing();
     await _initializeWebcam();
     _startClock();
@@ -130,33 +129,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       }
     } catch (e) {
       print("Error starting session: $e");
-    }
-  }
-
-  Future<void> _fetchMeasurementData() async {
-    if (currentDate.isEmpty) {
-      print("Cannot fetch measurement data. Date is missing.");
-      return;
-    }
-
-    try {
-      final response = await http.get(
-        Uri.parse("http://3.38.191.196/api/video-session/${widget.userId}/$currentDate"),
-        headers: {
-          "Authorization": "Bearer ${widget.token}",
-        },
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          measurementResult = response.body; // API 결과 저장
-        });
-        print("Measurement data fetched successfully: $measurementResult");
-      } else {
-        print("Failed to fetch measurement data: ${response.statusCode} ${response.body}");
-      }
-    } catch (e) {
-      print("Error fetching measurement data: $e");
     }
   }
 
@@ -287,7 +259,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
           Text(
             currentTime,
             style: const TextStyle(
-              fontSize: 128,
+              fontSize: 64,
               fontFamily: 'Inter',
               fontWeight: FontWeight.w600,
               color: Colors.white,
@@ -326,7 +298,15 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
           if (isWebcamInitialized)
             Expanded(
               child: Center(
-                child: HtmlElementView(viewType: 'webcam-view'),
+                child: Container(
+                  width: 640,
+                  height: 480,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white, width: 2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: HtmlElementView(viewType: 'webcam-view'),
+                ),
               ),
             ),
           Align(
@@ -334,26 +314,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ElevatedButton(
-                  onPressed: _fetchMeasurementData,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4C9BB8),
-                    fixedSize: const Size(248, 88),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text("Fetch Data"),
-                ),
-                if (measurementResult.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      "Result: $measurementResult",
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ),
-                const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _endSession,
                   style: ElevatedButton.styleFrom(
