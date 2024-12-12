@@ -37,6 +37,8 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   @override
   void initState() {
     super.initState();
+
+    _startSession();
     _initializeWebcam();
     _startClock();
   }
@@ -102,7 +104,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
           elapsedTime = Duration.zero;
         });
         print("Session started successfully with ID: $sessionId");
-
         _connectToWebSocket();
         _startCapturing();
       } else {
@@ -117,19 +118,18 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     try {
       webSocketChannel = WebSocketChannel.connect(
         Uri.parse("ws://3.38.191.196/image"),
-      );
-
-      webSocketChannel!.stream.listen(
-            (message) {
-          print("Message from WebSocket: $message");
-        },
-        onError: (error) {
-          print("WebSocket error: $error");
-        },
-        onDone: () {
-          print("WebSocket connection closed.");
-        },
-      );
+    );
+    webSocketChannel!.stream.listen(
+           (message) {
+         print("Message from WebSocket: $message");
+       },
+      onError: (error) {
+        print("WebSocket error: $error");
+      },
+      onDone: () {
+        print("WebSocket connection closed.");
+      },
+    );
 
       print("WebSocket connected.");
     } catch (e) {
@@ -190,7 +190,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
         final imageBytes = Uint8List.view(arrayBuffer);
 
         final metadata = jsonEncode({
-          'session_id': sessionId,
+          'user_id': widget.userId,
           'timestamp': DateTime.now().toIso8601String(),
         });
 
