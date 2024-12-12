@@ -3,13 +3,14 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:focus/screens/dailyReport.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:http/http.dart' as http;
 import 'package:js/js_util.dart';
-import 'package:focus/utils/jwt_utils.dart';
+import 'package:focus/utils/jwt_utils.dart'; // JWT 디코더 유틸 추가
 
 class ConcentrateScreen extends StatefulWidget {
-  final String userId;
+  final int userId; // Updated to int
   final String token;
   final String title;
 
@@ -40,16 +41,31 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   String currentDate = '';
   String startTime = ''; // For measurement start time
   Duration elapsedTime = Duration.zero;
-  String? userId;
+
+  String measurementResult = ''; // 측정 결과 저장
+  Map<String, dynamic>? decodedJWT; // JWT 디코딩 결과
 
   @override
   void initState() {
     super.initState();
-    _decodeToken(); // Decode JWT token at initialization
+    _decodeJWT(); // JWT 디코딩
+    _initializeScreen();
+  }
+
+  void _decodeJWT() {
+    try {
+      decodedJWT = JWTUtils.decodeJWT(widget.token);
+      print("Decoded JWT: $decodedJWT");
+    } catch (e) {
+      print("Failed to decode JWT: $e");
+    }
+  }
+
+  Future<void> _initializeScreen() async {
     _connectToWebSocket();
-    _startSession();
+    await _startSession();
     _startCapturing();
-    _initializeWebcam();
+    await _initializeWebcam();
     _startClock();
   }
 
@@ -60,17 +76,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     webSocketChannel?.sink.close();
     videoElement.srcObject?.getTracks().forEach((track) => track.stop());
     super.dispose();
-  }
-
-  void _decodeToken() {
-    try {
-      final payload = JWTUtils.decodeJWT(widget.token);
-      userId = payload['userId'] ?? payload['sub'];
-      if (userId == null) throw Exception("User ID is missing in the token.");
-      print("Decoded User ID: $userId");
-    } catch (e) {
-      print("Error decoding token: $e");
-    }
   }
 
   Future<void> _initializeWebcam() async {
@@ -98,17 +103,14 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
 
     try {
       final requestBody = {
-        "user_id": userId,
+        "user_id": widget.userId,
         "title": widget.title,
       };
-
-      print("Starting session with body: $requestBody");
 
       final response = await http.post(
         Uri.parse("http://3.38.191.196/api/video-session/start"),
         headers: {
           "Content-Type": "application/json",
-          //"Authorization": "Bearer ${widget.token}",
         },
         body: jsonEncode(requestBody),
       );
@@ -132,21 +134,24 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   }
 
   Future<void> _fetchMeasurementData() async {
-    if (userId == null || currentDate.isEmpty) {
-      print("Cannot fetch measurement data. User ID or date is missing.");
+    if (currentDate.isEmpty) {
+      print("Cannot fetch measurement data. Date is missing.");
       return;
     }
 
     try {
       final response = await http.get(
-        Uri.parse("http://3.38.191.196/api/video-session/$userId/$currentDate"),
+        Uri.parse("http://3.38.191.196/api/video-session/${widget.userId}/$currentDate"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
       );
 
       if (response.statusCode == 200) {
-        print("Measurement data: ${response.body}");
+        setState(() {
+          measurementResult = response.body; // API 결과 저장
+        });
+        print("Measurement data fetched successfully: $measurementResult");
       } else {
         print("Failed to fetch measurement data: ${response.statusCode} ${response.body}");
       }
@@ -182,6 +187,10 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     }
   }
 
+  Future<ByteBuffer> _blobToArrayBuffer(Blob blob) async {
+    return await promiseToFuture(callMethod(blob, 'arrayBuffer', []));
+  }
+
   void _connectToWebSocket() {
     try {
       webSocketChannel = WebSocketChannel.connect(
@@ -198,7 +207,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
           print("WebSocket connection closed.");
         },
       );
-      print("WebSocket connected.");
     } catch (e) {
       print("Failed to connect to WebSocket: $e");
     }
@@ -220,13 +228,15 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     ctx.drawImage(videoElement, 0, 0);
 
     canvas.toBlob().then((blob) async {
+      if (blob == null) return;
+
       try {
         final arrayBuffer = await _blobToArrayBuffer(blob);
         final imageBytes = Uint8List.view(arrayBuffer);
 
         final metadata = jsonEncode({
-          "user_id" : userId,
-          "title" : widget.title,
+          "user_id": widget.userId,
+          "title": widget.title,
         });
 
         final metadataBytes = Uint8List.fromList(utf8.encode(metadata + '\n'));
@@ -239,23 +249,32 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       } catch (e) {
         print("Error processing image blob: $e");
       }
-    }).catchError((error) {
-      print("Error converting canvas to Blob: $error");
     });
   }
 
-  Future<ByteBuffer> _blobToArrayBuffer(Blob blob) {
-    return promiseToFuture(callMethod(blob, 'arrayBuffer', []));
-  }
-
   void _startClock() {
-    clockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       final now = DateTime.now();
       setState(() {
         currentTime = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
         currentDate = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
       });
     });
+  }
+
+  void _exitToDailyReport() {
+    if (sessionId != null) {
+      _endSession();
+    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DailyReportScreen(
+          userId: widget.userId,
+          date: currentDate,
+        ),
+      ),
+    );
   }
 
   @override
@@ -326,6 +345,14 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                   ),
                   child: const Text("Fetch Data"),
                 ),
+                if (measurementResult.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      "Result: $measurementResult",
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _endSession,
@@ -337,6 +364,18 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                     ),
                   ),
                   child: const Text("End Session"),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _exitToDailyReport,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4C9BB8),
+                    fixedSize: const Size(248, 88),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: const Text("Exit"),
                 ),
               ],
             ),

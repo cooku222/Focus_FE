@@ -25,12 +25,10 @@ class _WebSocketTestPageState extends State<WebSocketTestPage> {
   }
 
   void connectToWebSocket() {
-    // Replace 'ws://your-websocket-server-url' with your actual WebSocket server URL
     channel = WebSocketChannel.connect(
-      Uri.parse('ws://52.78.38.195/image'),
+      Uri.parse('ws://3.38.191.196/image'),
     );
 
-    // Listen to the WebSocket stream
     channel.stream.listen(
           (message) {
         setState(() {
@@ -50,7 +48,7 @@ class _WebSocketTestPageState extends State<WebSocketTestPage> {
     );
   }
 
-  void testWebSocketConnection(String userId, String title) {
+  void testWebSocketConnection(int userId, String title) {
     if (binaryData == null) {
       setState(() {
         serverResponse = "No binary data selected.";
@@ -96,7 +94,6 @@ class _WebSocketTestPageState extends State<WebSocketTestPage> {
 
   @override
   void dispose() {
-    // Close the WebSocket connection when the widget is disposed
     channel.sink.close(status.goingAway);
     userIdController.dispose();
     titleController.dispose();
@@ -114,6 +111,7 @@ class _WebSocketTestPageState extends State<WebSocketTestPage> {
             TextField(
               controller: userIdController,
               decoration: const InputDecoration(labelText: "User ID"),
+              keyboardType: TextInputType.number, // Restrict to numbers only
             ),
             TextField(
               controller: titleController,
@@ -127,11 +125,18 @@ class _WebSocketTestPageState extends State<WebSocketTestPage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                final userId = userIdController.text.trim();
+                final userIdText = userIdController.text.trim();
                 final title = titleController.text.trim();
 
-                if (userId.isNotEmpty && title.isNotEmpty) {
-                  testWebSocketConnection(userId, title);
+                if (userIdText.isNotEmpty && title.isNotEmpty) {
+                  try {
+                    final userId = int.parse(userIdText); // Convert to int
+                    testWebSocketConnection(userId, title);
+                  } catch (e) {
+                    setState(() {
+                      serverResponse = "User ID must be a valid number.";
+                    });
+                  }
                 } else {
                   setState(() {
                     serverResponse = "User ID and Title are required.";

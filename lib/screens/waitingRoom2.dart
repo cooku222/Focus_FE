@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:focus/screens/concentrateScreen.dart';
@@ -12,7 +13,7 @@ class WaitingRoom2 extends StatefulWidget {
 
 class _WaitingRoom2State extends State<WaitingRoom2> {
   final TextEditingController _titleController = TextEditingController();
-  String? userId;
+  int? userId;
   String? token;
 
   @override
@@ -24,14 +25,14 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
   Future<void> _retrieveTokenAndDecode() async {
     const storage = FlutterSecureStorage();
     try {
-      token = await storage.read(key: 'accessToken'); // 토큰 읽기
+      token = await storage.read(key: 'token'); // 토큰 읽기
       if (token != null) {
         print("Retrieved token: $token"); // 디버깅: 토큰 출력
         final payload = JWTUtils.decodeJWT(token!); // JWT 디코딩
         print("Decoded Payload: $payload"); // 디버깅: 디코딩된 페이로드 출력
 
         setState(() {
-          userId = payload['userId']?.toString() ?? payload['sub']?.toString(); // 'sub' fallback
+          userId = payload['userId'];
         });
 
         if (userId != null) {
@@ -95,25 +96,20 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       return;
     }
 
-    // Navigate to ConcentrateScreen with userId and title
+    // Navigate to ConcentrateScreen with userId (as int) and title
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ConcentrateScreen(
-          userId: userId!,
+          userId: userId!, // Pass as int
           token: token!,
           title: _titleController.text.trim(),
-        ),
-        settings: RouteSettings(
-          arguments: {
-            'userId': userId,
-            'token': token,
-            'title': _titleController.text.trim(),
-          },
         ),
       ),
     );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
