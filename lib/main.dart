@@ -45,8 +45,8 @@ class MyApp extends StatelessWidget {
           child: PlannerScreen(userId: 1, date: DateTime.now()),
         ), // 플래너 화면 보호
         '/waitingRoom': (context) => AuthGuard(child: const WaitingRoom()),
-        '/waitingRoom2': (context) => AuthGuard(child: const WaitingRoom2(userId: 1)),// 대기실 2 화면 보호
-        '/concentrateScreen': (context) => AuthGuard(child: const ConcentrateScreen(userId: 1, title: '')), // 집중 화면 보호
+        '/waitingRoom2': (context) => AuthGuard(child: const WaitingRoom2()),// 대기실 2 화면 보호
+        '/concentrateScreen': (context) => AuthGuard(child: const ConcentrateScreen(userId: '', token: '', title: '',)), // 집중 화면 보호
         '/dailyReport': (context) => AuthGuard(
           child: DailyReportScreen(userId: 1, date: '2024-12-05'),
         ), // 일일 리포트 화면 보호

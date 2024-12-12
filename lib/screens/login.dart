@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:focus/main.dart'; // 메인 화면으로 돌아가기 위해 main.dart를 임포트
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:focus/widgets/header.dart'; // Header 위젯 경로 임포트
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure Storage 임포트
+import 'package:focus/utils/jwt_utils.dart'; // JWT 디코딩 유틸리티
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -17,47 +17,75 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
 
   static const storage = FlutterSecureStorage(); // FlutterSecureStorage 초기화
-  late String accessToken;
 
-  void handleLogin() async {
+  Future<void> handleLogin() async {
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
 
     try {
       final response = await http.post(
         Uri.parse('http://3.38.191.196/api/sign-in'),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: {"Content-Type": "application/json"},
         body: jsonEncode({"email": email, "password": password}),
       );
 
-      print("Response Code: ${response.statusCode}");
-      print("Response Body: ${response.body}");
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        accessToken = responseData['accessToken']; // 초기화 보장
-        print("Access Token: $accessToken");
 
-        // Access Token 저장
+        // Access Token 추출
+        final accessToken = responseData['accessToken'];
+        if (accessToken == null) {
+          throw Exception("Access token is missing in the response.");
+        }
+
+        // JWT 디코딩 및 User ID 추출
+        final payload = JWTUtils.decodeJWT(accessToken);
+        final userId = payload['sub']; // `sub` 키를 User ID로 사용
+        if (userId == null) {
+          throw Exception("User ID is missing in the token.");
+        }
+
+        // Secure Storage에 상태 저장
         await storage.write(key: 'accessToken', value: accessToken);
         await storage.write(key: 'isLoggedIn', value: 'true');
+        await storage.write(key: 'userId', value: userId.toString());
 
-        // 성공 처리
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-              (route) => false,
-        );
+        print("Access Token: $accessToken");
+        print("User ID: $userId");
+
+        // 로그인 성공 후 메인 화면으로 이동
+        Navigator.pushReplacementNamed(context, '/');
       } else {
-        // 로그인 실패 처리
-        print("Error: ${response.statusCode}, Body: ${response.body}");
         _showErrorDialog("로그인 실패", "이메일 또는 비밀번호가 올바르지 않습니다.");
       }
     } catch (e) {
-      print("Network error: $e");
-      _showErrorDialog("네트워크 오류", "서버와의 연결에 실패했습니다. 다시 시도해주세요.");
+      print("Error during login: $e");
+      _showErrorDialog("로그인 오류", "서버와의 연결에 실패했습니다. 다시 시도해주세요.");
+    }
+  }
+
+  Future<void> checkLoginStatus() async {
+    try {
+      // FlutterSecureStorage에서 로그인 정보 확인
+      String? token = await storage.read(key: 'accessToken');
+      if (token != null) {
+        // JWT 디코딩으로 유효성 확인
+        final payload = JWTUtils.decodeJWT(token);
+        final userId = payload['sub']; // sub 키를 User ID로 사용
+        if (userId != null) {
+          print("로그인 상태 확인됨. User ID (sub): $userId");
+          // 로그인 상태면 그대로 유지
+          Navigator.pushReplacementNamed(context, '/');
+        } else {
+          print("토큰 유효하지 않음. 재로그인 필요");
+          await storage.deleteAll();
+        }
+      } else {
+        print("로그인 상태가 아닙니다.");
+      }
+    } catch (e) {
+      print("로그인 상태 확인 오류: $e");
+      await storage.deleteAll();
     }
   }
 
@@ -77,25 +105,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> checkLoginStatus() async {
-    try {
-      // FlutterSecureStorage에서 로그인 정보 확인
-      String? token = await storage.read(key: 'accessToken');
-      if (token != null) {
-        print("로그인 상태 확인됨. 메인 화면으로 이동합니다.");
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-              (route) => false, // 이전 화면 제거
-        );
-      } else {
-        print("로그인 상태가 아닙니다.");
-      }
-    } catch (e) {
-      print("로그인 상태 확인 오류: $e");
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -107,18 +116,17 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        color: Colors.white, // 전체 배경 흰색
+        color: Colors.white,
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 헤더
               Header(
                 onLoginTap: () {
                   print("Login button clicked");
                 },
               ),
-              const SizedBox(height: 55), // 헤더와 로그인 텍스트 간격
+              const SizedBox(height: 55),
               const Center(
                 child: Text(
                   "로그인",
@@ -131,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 55), // "로그인"과 입력 필드 간격
+              const SizedBox(height: 55),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
@@ -162,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 51), // ID와 비밀번호 간 간격
+                    const SizedBox(height: 51),
                     const Text(
                       "비밀번호",
                       style: TextStyle(
@@ -189,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 55), // 간격
+                    const SizedBox(height: 55),
                     Center(
                       child: GestureDetector(
                         onTap: handleLogin,
@@ -197,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: double.infinity,
                           height: 50,
                           decoration: BoxDecoration(
-                            color: const Color(0x80327B9E), // 투명도 50%
+                            color: const Color(0x80327B9E),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Center(

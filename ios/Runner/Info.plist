@@ -59,3 +59,13 @@
     <string>사진 라이브러리 접근이 필요합니다.</string>
 </dict>
 </plist>
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+</dict>
+<key>keychain-access-groups</key>
+<array>
+    <string>$(AppIdentifierPrefix)com.example.app</string>
+</array>
+

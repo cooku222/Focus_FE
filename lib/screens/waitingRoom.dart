@@ -2,9 +2,42 @@ import 'dart:html';
 import 'package:flutter/material.dart';
 import 'dart:ui_web' as ui;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:focus/utils/jwt_utils.dart'; // For decoding JWT
 
 class WaitingRoom extends StatelessWidget {
   const WaitingRoom({Key? key}) : super(key: key);
+
+  static const storage = FlutterSecureStorage();
+  Future<void> _navigateToNextStep(BuildContext context) async {
+    try {
+      // FlutterSecureStorage에서 토큰 읽기
+      final token = await storage.read(key: 'accessToken');
+      if (token == null || token.isEmpty) {
+        throw Exception("No token found in storage.");
+      }
+
+      // 토큰 디코딩
+      final payload = JWTUtils.decodeJWT(token);
+      print("Decoded Payload: $payload");
+
+      // 사용자 ID 추출
+      final userId = payload['sub']; // sub 키 사용
+      if (userId == null) {
+        throw Exception("User ID is missing in the token.");
+      }
+
+      // WaitingRoom2로 이동
+      Navigator.pushReplacementNamed(
+        context,
+        '/waitingRoom2',
+        arguments: {'token': token, 'userId': userId},
+      );
+    } catch (e) {
+      print("Error processing token: $e");
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -89,27 +122,12 @@ class WaitingRoom extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: () async {
-                    const storage = FlutterSecureStorage();
-                    String? isLoggedIn = await storage.read(key: 'isLoggedIn');
-
-                    if (isLoggedIn == 'true') {
-                      // 로그인 상태라면 WaitingRoom2로 이동
-                      Navigator.pushReplacementNamed(context, '/waitingRoom2');
-                    } else {
-                      // 로그인 상태가 아니면 Login 화면으로 이동
-                      Navigator.pushReplacementNamed(context, '/login');
-                    }
-                  },
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.all(Colors.blue), // Button color
-                    padding: WidgetStateProperty.all(
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    ),
-                    shape: WidgetStateProperty.all(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                  onPressed: () => _navigateToNextStep(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue, // Button color
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: const Text(
