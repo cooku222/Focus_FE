@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiService {
-  final String baseUrl = "http://52.78.38.195";
+  final String baseUrl = "http://3.38.191.196";
   final AuthService authService;
 
   ApiService(this.authService);
