@@ -144,8 +144,6 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-
-
   Future<void> _fetchUsername() async {
     // Simulating fetching username from secure storage or API
     final fetchedUsername = await Future.value("John Doe"); // Replace with actual fetch logic

@@ -108,11 +108,11 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       ),
       body: Center(
         child: Container(
-          margin: const EdgeInsets.all(16.0),
-          padding: const EdgeInsets.all(16.0),
+          margin: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
