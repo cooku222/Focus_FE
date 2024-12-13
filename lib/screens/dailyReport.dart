@@ -293,7 +293,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => WeeklyReportScreen(
