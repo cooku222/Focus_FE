@@ -7,6 +7,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:js/js_util.dart';
 import 'package:focus/utils/jwt_utils.dart';
 import 'package:http/http.dart' as http;
+import 'package:focus/screens/dailyReport.dart';
 
 class ConcentrateScreen extends StatefulWidget {
   final int userId;
@@ -35,6 +36,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   bool isCapturing = false;
 
   String webSocketStatus = "Connecting...";
+  String selectedDate = "2024-12-01"; // 초기 날짜 설정
 
   @override
   void initState() {
@@ -47,7 +49,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
 
   @override
   void dispose() {
-    _endSession();
     _closeWebSocket();
     captureTimer?.cancel();
     super.dispose();
@@ -250,9 +251,22 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
+                    // Session 종료 로직
                     _endSession();
                     _closeWebSocket();
-                    Navigator.pop(context);
+
+                    // DailyReportScreen으로 이동하며 필요한 데이터를 전달
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DailyReportScreen(
+                          userId: widget.userId, // 현재 사용자의 ID
+                          token: widget.token,   // 인증 토큰
+                          date: selectedDate,    // 측정한 날짜를 전달
+                          title: widget.title,   // 전달하고자 하는 title 값
+                        ),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,

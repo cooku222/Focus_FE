@@ -64,9 +64,18 @@ class MyApp extends StatelessWidget {
           ),
         ),
         // 집중 화면 보호
-        '/dailyReport': (context) => AuthGuard(
-          child: DailyReportScreen(userId: 1, date: '2024-12-05'),
-        ), // 일일 리포트 화면 보호
+        '/dailyReport': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          return AuthGuard(
+            child: DailyReportScreen(
+              userId: args?['userId'] ?? -1,
+              token: args?['token'] ?? '',
+              date: args?['date'] ?? '',
+              title: args?['title'] ?? '',
+            ),
+          );
+        },
+        // 일일 리포트 화면 보호
         '/myPage': (context) => AuthGuard(child: const MyPageScreen()), // 마이페이지 보호
       },
       onUnknownRoute: (settings) {
@@ -204,6 +213,8 @@ class _MainScreenState extends State<MainScreen> {
                       builder: (context) => DailyReportScreen(
                         userId: 1, // Replace with actual user ID
                         date: "2024-12-05", // Example date in string format
+                        title: '',
+                        token: '',
                       ),
                     ),
                   );

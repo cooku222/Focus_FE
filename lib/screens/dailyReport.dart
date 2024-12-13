@@ -5,13 +5,21 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../widgets/header.dart';
 import '../screens/weeklyReport.dart';
+import '../utils/jwt_utils.dart';
 
 class DailyReportScreen extends StatefulWidget {
   final int userId;
+  final String token;
   final String date;
+  final String title; // 추가된 title
 
-  const DailyReportScreen({Key? key, required this.userId, required this.date})
-      : super(key: key);
+  const DailyReportScreen({
+    Key? key,
+    required this.userId,
+    required this.token,
+    required this.date,
+    required this.title, // title 파라미터 추가
+  }) : super(key: key);
 
   @override
   _DailyReportScreenState createState() => _DailyReportScreenState();
@@ -24,11 +32,23 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
   bool hasError = false;
   String selectedDate = "";
 
+  late int userId;
+
   @override
   void initState() {
+    _decodeJWT();
     super.initState();
     selectedDate = widget.date;
     fetchDailyReport();
+  }
+
+  void _decodeJWT() {
+    try {
+      final decodedJWT = JWTUtils.decodeJWT(widget.token);
+      print("Decoded JWT: $decodedJWT");
+    } catch (e) {
+      print("Failed to decode JWT: $e");
+    }
   }
 
   Future<void> fetchDailyReport() async {
@@ -100,8 +120,6 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
       );
     }
 
-    final focusedTime = reportData!['totalFocusedTime'];
-    final notFocusedTime = reportData!['totalNotFocusedTime'];
     final focusedRatio = reportData!['focusedRatio'];
     final notFocusedRatio = reportData!['notFocusedRatio'];
 
@@ -184,7 +202,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                     ),
                   ),
                   const SizedBox(width: 20),
-                  // Right: Date, Focus Chart
+                  // Right: Date, Focus Chart, and Title Table
                   Expanded(
                     flex: 2,
                     child: Column(
@@ -242,6 +260,27 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 20),
+                        // Title Table
+                        const Text(
+                          'Session Title',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        DataTable(
+                          columns: const [
+                            DataColumn(label: Text('Field')),
+                            DataColumn(label: Text('Value')),
+                          ],
+                          rows: [
+                            DataRow(cells: [
+                              const DataCell(Text('Title')),
+                              DataCell(Text(widget.title)),
+                            ]),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -249,31 +288,36 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
               ),
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => WeeklyReportScreen(
-                    userId: widget.userId,
-                    startDate: selectedDate,
+          // Weekly Report Button
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => WeeklyReportScreen(
+                      userId: widget.userId,
+                      startDate: selectedDate,
+                    ),
                   ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
               ),
-            ),
-            child: const Text(
-              "주간 리포트 보기",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              child: const Text(
+                "주간 리포트 보기",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
