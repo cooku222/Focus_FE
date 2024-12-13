@@ -13,7 +13,6 @@ import 'package:focus/screens/info3.dart';
 import 'package:focus/screens/info4.dart';
 import 'package:focus/screens/info5.dart';
 import 'package:focus/screens/planner.dart';
-import 'package:focus/screens/waitingRoom.dart';
 import 'package:focus/screens/waitingRoom2.dart';
 import 'package:focus/screens/concentrateScreen.dart';
 import 'package:focus/screens/dailyReport.dart';
@@ -45,7 +44,7 @@ class MyApp extends StatelessWidget {
         '/planner': (context) => AuthGuard(
           child: PlannerScreen(userId: 1, date: DateTime.now()),
         ), // 플래너 화면 보호
-        '/waitingRoom': (context) => AuthGuard(child: const WaitingRoom()),
+
         '/waitingRoom2': (context) {
           final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
           return AuthGuard(
@@ -241,7 +240,10 @@ class _MainScreenState extends State<MainScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const WaitingRoom(), // WaitingRoom으로 이동
+                          builder: (context) => const WaitingRoom2(
+                            token:  ['token'],
+                            userId: ['userId'],
+                          ), // WaitingRoom으로 이동
                         ),
                       );
                     },
@@ -436,7 +438,7 @@ class _TopBlock extends StatelessWidget {
           // 로그인 상태라면 WaitingRoom으로 이동
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const WaitingRoom()),
+            MaterialPageRoute(builder: (context) => const WaitingRoom2(token:'token', userId: 'userId')),
           );
           return;
         }
