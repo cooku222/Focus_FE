@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:focus/screens/concentrateScreen.dart';
@@ -19,24 +18,21 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _retrieveTokenAndDecode(); // didChangeDependencies에서 호출
+    _retrieveTokenAndDecode();
   }
 
   Future<void> _retrieveTokenAndDecode() async {
     try {
-      // ModalRoute에서 전달된 인자를 가져옴
       final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (arguments != null && arguments.containsKey('token')) {
         token = arguments['token'];
       }
 
-      // 토큰이 없으면 FlutterSecureStorage에서 읽기
       if (token == null) {
         const storage = FlutterSecureStorage();
         token = await storage.read(key: 'accessToken');
       }
 
-      // JWT 디코딩 및 userId 설정
       if (token != null) {
         final payload = JWTUtils.decodeJWT(token!);
         setState(() {
@@ -108,8 +104,10 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       ),
       body: Center(
         child: Container(
+          width: 918,
+          height: 572,
           margin: const EdgeInsets.all(8.0),
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(8),
@@ -122,19 +120,37 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
             ],
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
                 "Enter a Title",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  hintText: "Enter title here...",
-                  border: OutlineInputBorder(),
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        hintText: "Enter title here...",
+                        filled: true,
+                        fillColor: Color(0xFFE8E8E8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.add),
+                    color: Colors.black,
+                    iconSize: 24,
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               ElevatedButton(

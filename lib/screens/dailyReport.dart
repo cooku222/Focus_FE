@@ -11,14 +11,14 @@ class DailyReportScreen extends StatefulWidget {
   final int userId;
   final String token;
   final String date;
-  final String title;
+  final String title; // 추가된 title
 
   const DailyReportScreen({
     Key? key,
     required this.userId,
     required this.token,
     required this.date,
-    required this.title,
+    required this.title, // title 파라미터 추가
   }) : super(key: key);
 
   @override
@@ -31,6 +31,8 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
   bool isLoading = true;
   bool hasError = false;
   String selectedDate = "";
+
+  late int userId;
 
   @override
   void initState() {
@@ -53,9 +55,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
     final url =
         'http://3.38.191.196/api/daily-report/${widget.userId}/$selectedDate/summary';
     try {
-      final response = await http.get(Uri.parse(url), headers: {
-        'Authorization': 'Bearer ${widget.token}'
-      });
+      final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
@@ -120,8 +120,8 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
       );
     }
 
-    final focusedRatio = reportData!['focusedRatio'] ?? 0;
-    final notFocusedRatio = reportData!['notFocusedRatio'] ?? 0;
+    final focusedRatio = reportData!['focusedRatio'];
+    final notFocusedRatio = reportData!['notFocusedRatio'];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -178,45 +178,39 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Left: Task List
                   Expanded(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Tasks Overview',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                          ),
-                        ),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: taskList.length,
-                            itemBuilder: (context, index) {
-                              final task = taskList[index];
-                              return Card(
-                                child: ListTile(
-                                  title: Text(task['title']),
-                                  subtitle: Text(
-                                      'Focus: ${(task['focusRatio'] * 100).toStringAsFixed(1)}%'),
-                                ),
-                              );
+                    flex: 3,
+                    child: ListView.builder(
+                      itemCount: taskList.length,
+                      itemBuilder: (context, index) {
+                        final task = taskList[index];
+                        return Card(
+                          child: ListTile(
+                            title: Text(task['title']),
+                            subtitle: Text(
+                                '집중도: ${(task['focusRatio'] * 100).toStringAsFixed(1)}%'),
+                            onTap: () {
+                              // Update pie chart to focus on specific task
                             },
                           ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 20),
+                  // Right: Date, Focus Chart, and Title Table
                   Expanded(
+                    flex: 2,
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
-                          'Focus Distribution',
-                          style: TextStyle(
+                        Text(
+                          selectedDate,
+                          style: const TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.bold,
                             fontSize: 24,
@@ -224,8 +218,17 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        SizedBox(
-                          height: 300,
+                        const Text(
+                          '집중도',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 36,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Expanded(
                           child: PieChart(
                             PieChartData(
                               sections: [
@@ -257,6 +260,27 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 20),
+                        // Title Table
+                        const Text(
+                          'Session Title',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        DataTable(
+                          columns: const [
+                            DataColumn(label: Text('Field')),
+                            DataColumn(label: Text('Value')),
+                          ],
+                          rows: [
+                            DataRow(cells: [
+                              const DataCell(Text('Title')),
+                              DataCell(Text(widget.title)),
+                            ]),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -264,6 +288,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
               ),
             ),
           ),
+          // Weekly Report Button
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
@@ -287,7 +312,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                 ),
               ),
               child: const Text(
-                "View Weekly Report",
+                "주간 리포트 보기",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
