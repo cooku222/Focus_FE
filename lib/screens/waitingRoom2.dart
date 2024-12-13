@@ -123,7 +123,7 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                "Enter a Title",
+                "측정 컨텐츠 입력",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
