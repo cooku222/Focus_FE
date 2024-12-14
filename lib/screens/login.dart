@@ -84,6 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: MediaQuery.of(context).size.width * 0.8,
         color: Colors.white,
         child: SingleChildScrollView(
           child: Column(
@@ -122,6 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Container(
+                      width: MediaQuery.of(context).size.width * 0.8,
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: const Color(0xFF6CB8D1),
@@ -170,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: GestureDetector(
                         onTap: handleLogin,
                         child: Container(
-                          width: double.infinity,
+                          width: MediaQuery.of(context).size.width * 0.8,
                           height: 50,
                           decoration: BoxDecoration(
                             color: const Color(0x80327B9E),

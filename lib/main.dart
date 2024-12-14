@@ -337,6 +337,7 @@ class _MainScreenState extends State<MainScreen> {
       padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (isImageLeft) ...[
             Image.asset(
