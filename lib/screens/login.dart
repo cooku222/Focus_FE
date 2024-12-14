@@ -85,10 +85,11 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Container(
-        width: MediaQuery.of(context).size.width * 0.8,// 화면 높이를 채우기
+        width: MediaQuery.of(context).size.width*0.4,// 화면 높이를 채우기
         color: Colors.white,
         child: SingleChildScrollView(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Header(
@@ -126,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      width: MediaQuery.of(context).size.width * 0.8,
+                      width: MediaQuery.of(context).size.width * 0.4,
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: const Color(0xFF6CB8D1),
@@ -175,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: GestureDetector(
                         onTap: handleLogin,
                         child: Container(
-                          width: MediaQuery.of(context).size.width * 0.8,
+                          width: MediaQuery.of(context).size.width * 0.4,
                           height: 50,
                           decoration: BoxDecoration(
                             color: const Color(0x80327B9E),
