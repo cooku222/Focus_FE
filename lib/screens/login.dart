@@ -84,38 +84,38 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Container(
-        width: MediaQuery.of(context).size.width*0.4,// 화면 높이를 채우기
-        color: Colors.white,
+      body: Center(
         child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Header(
-                onLoginTap: () {
-                  print("Login button clicked");
-                },
+              Container(
+                width: MediaQuery.of(context).size.width, // 헤더의 너비를 화면 전체로 유지
+                child: Header(
+                  onLoginTap: () {
+                    print("Login button clicked");
+                  },
+                ),
               ),
               const SizedBox(height: 55),
-              const Center(
-                child: Text(
-                  "로그인",
-                  style: TextStyle(
-                    fontSize: 28,
-                    height: 1.25,
-                    fontFamily: "Noto Sans",
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                  ),
+              const Text(
+                "로그인",
+                style: TextStyle(
+                  fontSize: 28,
+                  height: 1.25,
+                  fontFamily: "Noto Sans",
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 55),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
@@ -124,6 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 16,
                         color: Color(0xFF757575),
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -151,9 +152,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 16,
                         color: Color(0xFF757575),
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     Container(
+                      width: MediaQuery.of(context).size.width * 0.4,
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: const Color(0xFF6CB8D1),
