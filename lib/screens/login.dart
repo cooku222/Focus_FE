@@ -84,127 +84,133 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: MediaQuery.of(context).size.width, // 헤더의 너비를 화면 전체로 유지
-                child: Header(
-                  onLoginTap: () {
-                    print("Login button clicked");
-                  },
-                ),
-              ),
-              const SizedBox(height: 55),
-              const Text(
-                "로그인",
-                style: TextStyle(
-                  fontSize: 28,
-                  height: 1.25,
-                  fontFamily: "Noto Sans",
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 55),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      body: Column(
+        children: [
+          Container(
+            width: MediaQuery.of(context).size.width, // 헤더의 너비를 화면 전체로 유지
+            child: Header(
+              onLoginTap: () {
+                print("Login button clicked");
+              },
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    const SizedBox(height: 55),
                     const Text(
-                      "ID (e-mail)",
+                      "로그인",
                       style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF757575),
+                        fontSize: 28,
+                        height: 1.25,
+                        fontFamily: "Noto Sans",
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.4,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color(0xFF6CB8D1),
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: TextField(
-                        controller: emailController,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: "이메일을 입력하세요",
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 51),
-                    const Text(
-                      "비밀번호",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF757575),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.4,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color(0xFF6CB8D1),
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: TextField(
-                        controller: passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: "비밀번호를 입력하세요",
-                        ),
-                      ),
                     ),
                     const SizedBox(height: 55),
-                    Center(
-                      child: GestureDetector(
-                        onTap: handleLogin,
-                        child: Container(
-                          width: MediaQuery.of(context).size.width * 0.4,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: const Color(0x80327B9E),
-                            borderRadius: BorderRadius.circular(8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            "ID (e-mail)",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF757575),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          child: const Center(
-                            child: Text(
-                              "로그인",
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w400,
-                                fontFamily: "Inter",
-                                color: Colors.black,
+                          const SizedBox(height: 8),
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.4,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: const Color(0xFF6CB8D1),
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: TextField(
+                              controller: emailController,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                hintText: "이메일을 입력하세요",
                               ),
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 51),
+                          const Text(
+                            "비밀번호",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF757575),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.4,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: const Color(0xFF6CB8D1),
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: TextField(
+                              controller: passwordController,
+                              obscureText: true,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                hintText: "비밀번호를 입력하세요",
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 55),
+                          Center(
+                            child: GestureDetector(
+                              onTap: handleLogin,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.4,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: const Color(0x80327B9E),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    "로그인",
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w400,
+                                      fontFamily: "Inter",
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
