@@ -98,6 +98,30 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final PageController _pageController = PageController(initialPage: 0);// WebSocket 매니저 초기화
+
+  final List<Map<String, String>> contentList = [
+    {
+      "imagePath": "images/1.png",
+      "title": "일일 리포트",
+      "description": "매일 집중도를 측정하고\n이를 일일 리포트로\n기록해줍니다.",
+    },
+    {
+      "imagePath": "images/4.png",
+      "title": "주간 집중도 현황",
+      "description": "주간 집중도를\n그래프로 보여주고\n맞춤형 솔루션을 제공해줍니다.",
+    },
+    {
+      "imagePath": "images/5.png",
+      "title": "플래너",
+      "description": "플래너 기능을 통해\n오늘 공부할 양을\n기록합니다.",
+    },
+    {
+      "imagePath": "images/2.png",
+      "title": "측정 화면",
+      "description": "스스로의 집중도를 측정할 수 있습니다.\n실시간 알림을 통해\n 집중도 향상을 도와줍니다.",
+    },
+  ];
+
   String username = "Guest";
 
   @override
@@ -173,7 +197,8 @@ class _MainScreenState extends State<MainScreen> {
       body: Container(
         color: Colors.white,
         child: SingleChildScrollView(
-          child: Column(
+          child:
+            Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Header(
@@ -289,134 +314,106 @@ class _MainScreenState extends State<MainScreen> {
                           fit: BoxFit.contain,
                         ),
                       ),
+                      const SizedBox(height: 20),
+                      ...contentList.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        Map<String, String> content = entry.value;
+                        bool isImageLeft = index % 2 == 0;
+                        return _buildContentSection(content, isImageLeft);
+                      }).toList(),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 45),
-              _buildImageTextSection(
-                imagePath: 'images/1.png',
-                title: "일일 리포트",
-                description: "매일 집중도를 측정하고\n이를 일일 리포트로\n기록해줍니다.",
-                isImageLeft: true,
-              ),
-              const SizedBox(height: 45),
-              _buildImageTextSection(
-                imagePath: 'images/4.png',
-                title: "주간 집중도 현황",
-                description: "주간 집중도를\n그래프로 보여주고\n맞춤형 솔루션을 제공해줍니다.",
-                isImageLeft: false,
-              ),
-              const SizedBox(height: 45),
-              _buildImageTextSection(
-                imagePath: 'images/5.png',
-                title: "플래너",
-                description: "플래너 기능을 통해\n오늘 공부할 양을\n기록합니다.",
-                isImageLeft: true,
-              ),
-              const SizedBox(height: 45),
-              _buildImageTextSection(
-                imagePath: 'images/2.png',
-                title: "측정 화면",
-                description: "스스로의 집중도를 측정할 수 있습니다.\n실시간 알림을 통해\n 집중도 향상을 도와줍니다.",
-                isImageLeft: false,
-              ),
-              const SizedBox(height: 45),
             ],
           ),
         ),
       ),
     );
   }
-
-  Widget _buildImageTextSection({
-    required String imagePath,
-    required String title,
-    required String description,
-    required bool isImageLeft,
-  }) {
+  Widget _buildContentSection(Map<String, String> content, bool isImageLeft) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
-        children: isImageLeft
-            ? [
-          Image.asset(
-            imagePath,
-            width: 300,
-            height: 300,
-            fit: BoxFit.contain,
-          ),
-          const SizedBox(width: 74),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "Noto Sans",
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  description,
-                  textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Noto Sans",
-                    color: Colors.black,
-                  ),
-                ),
-              ],
+        children: [
+          if (isImageLeft) ...[
+            Image.asset(
+              content['imagePath']!,
+              width: 583,
+              height: 412,
+              fit: BoxFit.cover,
             ),
-          ),
-        ]
-            : [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "Noto Sans",
-                    color: Colors.black,
+            const SizedBox(width: 30),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    content['title']!,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Noto Sans",
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  description,
-                  textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Noto Sans",
-                    color: Colors.black,
+                  const SizedBox(height: 10),
+                  Text(
+                    content['description']!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: "Noto Sans",
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 74),
-          Image.asset(
-            imagePath,
-            width: 300,
-            height: 300,
-            fit: BoxFit.contain,
-          ),
+          ] else ...[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    content['title']!,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Noto Sans",
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    content['description']!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: "Noto Sans",
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 30),
+            Image.asset(
+              content['imagePath']!,
+              width: 583,
+              height: 412,
+              fit: BoxFit.cover,
+            ),
+          ]
         ],
       ),
     );
   }
 }
+
 
 class _TopBlock extends StatelessWidget {
   final String username; // Accept username
