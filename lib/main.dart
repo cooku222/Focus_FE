@@ -199,6 +199,7 @@ class _MainScreenState extends State<MainScreen> {
         child: SingleChildScrollView(
           child:
             Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Header(
@@ -308,7 +309,7 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                       const SizedBox(height: 20),
                       Container(
-                        width: MediaQuery.of(context).size.width * 0.8,
+                        width: MediaQuery.of(context).size.width * 0.4,
                         child: Image.asset(
                           'images/3.png',
                           fit: BoxFit.contain,
@@ -375,6 +376,7 @@ class _MainScreenState extends State<MainScreen> {
           ] else ...[
             Expanded(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
