@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
           return AuthGuard(
             child: WaitingRoom2(
-              token: args?['token'] ?? '',
+              token: args?['accessToken'] ?? '',
               userId: args?['userId'] ?? -1,
             ),
           );
@@ -58,7 +58,7 @@ class MyApp extends StatelessWidget {
         '/concentrateScreen': (context) => AuthGuard(
           child: ConcentrateScreen(
             userId: (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>)['userId'],
-            token: (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>)['token'],
+            token: (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>)['accessToken'],
             title: (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>)['title'],
           ),
         ),
@@ -68,7 +68,7 @@ class MyApp extends StatelessWidget {
           return AuthGuard(
             child: DailyReportScreen(
               userId: args?['userId'] ?? -1,
-              token: args?['token'] ?? '',
+              token: args?['accessToken'] ?? '',
               date: args?['date'] ?? '',
               title: args?['title'] ?? '',
             ),
@@ -263,14 +263,31 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ),
                   _TopBlock(
-                    onMeasureTap: () {
+                    onMeasureTap: () async {
+                      const storage = FlutterSecureStorage();
+                      String? accessToken = await storage.read(key: 'accessToken'); // 저장된 토큰 읽기
+                      String? userId; // JWT에서 userId 추출용
+
+                      if (accessToken != null && accessToken.isNotEmpty) {
+                        // JWT를 디코딩하여 userId를 가져옵니다.
+                        final payload = JWTUtils.decodeJWT(accessToken);
+                        userId = payload['sub']; // JWT에서 userId 추출
+                      }
+
+                      if (accessToken == null || userId == null) {
+                        // 토큰이나 userId가 없으면 로그인을 요청합니다.
+                        print("Access token or user ID is missing. Redirecting to login.");
+                        Navigator.pushNamed(context, '/login');
+                        return;
+                      }
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const WaitingRoom2(
-                            token:  ['token'],
-                            userId: ['userId'],
-                          ), // WaitingRoom으로 이동
+                          builder: (context) => WaitingRoom2(
+                            userId: userId, // 전달할 토큰
+                            token: accessToken,     // 전달할 사용자 ID
+                          ),
                         ),
                       );
                     },
@@ -439,7 +456,7 @@ class _TopBlock extends StatelessWidget {
           // 로그인 상태라면 WaitingRoom으로 이동
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const WaitingRoom2(token:'token', userId: 'userId')),
+            MaterialPageRoute(builder: (context) => const WaitingRoom2(token:'accessToken', userId: 'user_id')),
           );
           return;
         }

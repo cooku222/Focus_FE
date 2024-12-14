@@ -15,6 +15,7 @@ class WaitingRoom2 extends StatefulWidget {
 class _WaitingRoom2State extends State<WaitingRoom2> {
   final TextEditingController _titleController = TextEditingController();
   int? userId;
+  String? date;
   String? token;
   List<String> _plannerTitles = [];
   String? _selectedTitle;
@@ -22,51 +23,77 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _retrieveTokenAndDecode();
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (arguments != null) {
+      token = arguments['token'];
+      userId = arguments['userId'];
+      print("Token received: $token");
+      print("User ID received: $userId");
+    } else {
+      print("No arguments received.");
+    }
+      _retrieveTokenAndDecode();
   }
 
   Future<void> _retrieveTokenAndDecode() async {
     try {
       final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (arguments != null && arguments.containsKey('token')) {
-        token = arguments['token'];
+      if (arguments != null && arguments.containsKey('accessToken')) {
+        token = arguments['accessToken'];
       }
 
       if (token == null) {
         const storage = FlutterSecureStorage();
         token = await storage.read(key: 'accessToken');
+        print("Decoded userId: \$token");
       }
 
       if (token != null) {
+        const storage = FlutterSecureStorage();
+        final token = await storage.read(key: 'accessToken');
         final payload = JWTUtils.decodeJWT(token!);
         setState(() {
           userId = payload['user_id'];
+          print("Decoded userId: \$userId");
         });
         await _fetchPlannerTitles();
+      } else {
+        print("Token is null");
       }
     } catch (e) {
-      print("Error retrieving or decoding token: $e");
+      print("Error retrieving or decoding token: \$e");
       _showLoginError();
     }
   }
 
   Future<void> _fetchPlannerTitles() async {
-    if (userId == null) return;
+    if (userId == null) {
+      print("UserId is null, cannot fetch planner titles");
+      return;
+    }
 
-    final url = Uri.parse('/api/planner/\$userId/${DateTime.now().toIso8601String().split('T')[0]}'); // Example date
+    final date = DateTime.now().toIso8601String().split('T')[0]; // Format date as YYYY-MM-DD
+    final url = Uri.parse('http://3.38.191.196/api/planner/$userId/$date'); // Construct the API URL
+    print("Fetching planner titles from: \$url");
+
     try {
-      final response = await http.get(url);
+      final response = await http.get(url, headers: {
+        'Authorization': 'Bearer $token', // Include token for authentication
+      });
+      print("Response status: \${response.statusCode}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List<dynamic>;
         setState(() {
-          _plannerTitles = data.map((item) => item['title'] as String).toList();
+          _plannerTitles = data.map((item) => item["title"] as String).toList();
+          print("Fetched planner titles: \$_plannerTitles");
         });
       } else {
-        print("Failed to fetch planner titles: ${response.statusCode}");
+        print("Failed to fetch planner titles: \${response.statusCode}");
+        print("Response body: \${response.body}");
       }
     } catch (e) {
-      print("Error fetching planner titles: $e");
+      print("Error fetching planner titles: \$e");
     }
   }
 
@@ -106,6 +133,8 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       );
       return;
     }
+
+    print("Navigating to ConcentrateScreen with title: \${_titleController.text.trim().isNotEmpty ? _titleController.text.trim() : _selectedTitle}");
 
     Navigator.push(
       context,
@@ -176,7 +205,9 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          print("Add button clicked with input: \${_titleController.text}");
+                        },
                         icon: const Icon(Icons.add),
                         color: Colors.black,
                         iconSize: 24,
@@ -191,17 +222,20 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
                         final title = _plannerTitles[index];
                         final isSelected = title == _selectedTitle;
 
+                        print("Building item for title: \$title");
+
                         return GestureDetector(
                           onTap: () {
                             setState(() {
                               _selectedTitle = title;
+                              print("Selected title: \$title");
                             });
                           },
                           child: Container(
                             margin: const EdgeInsets.symmetric(vertical: 8),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: isSelected ? Colors.grey[300] : Colors.white,
+                              color: isSelected ? const Color(0xFFE8E8E8) : Colors.white,
                               border: Border.all(color: Colors.black12),
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -210,7 +244,10 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
                               children: [
                                 Text(
                                   title,
-                                  style: const TextStyle(fontSize: 16),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: isSelected ? Colors.grey[800] : Colors.black,
+                                  ),
                                 ),
                                 if (isSelected)
                                   const Icon(Icons.check, color: Colors.black),
@@ -229,7 +266,10 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
             bottom: 16,
             right: 16,
             child: GestureDetector(
-              onTap: _navigateToConcentrateScreen,
+              onTap: () {
+                print("Navigating to ConcentrateScreen");
+                _navigateToConcentrateScreen();
+              },
               child: Container(
                 width: 56,
                 height: 56,

@@ -31,6 +31,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   Timer? captureTimer;
   Timer? pingTimer;
   int? sessionId;
+  int? userId;
 
   bool isWebcamInitialized = false;
   bool isCapturing = false;
@@ -164,8 +165,8 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
 
   void _decodeJWT() {
     try {
-      final decodedJWT = JWTUtils.decodeJWT(widget.token);
-      print("Decoded JWT: $decodedJWT");
+      final payload = JWTUtils.decodeJWT(widget.token);
+      print("Decoded JWT: $payload");
     } catch (e) {
       print("Failed to decode JWT: $e");
     }
