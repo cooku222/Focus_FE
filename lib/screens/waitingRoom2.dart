@@ -34,8 +34,7 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
     userId = widget.userId;
     print("Token received: $token");
     print("User ID received: $userId");
-    _verifyTokenAndFetchData();// Safe to use here.
-    // Do something with the theme...
+    _verifyTokenAndFetchData();
   }
 
   Future<void> _verifyTokenAndFetchData() async {
@@ -62,7 +61,6 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
     }
   }
 
-
   Future<void> _fetchPlannerTitles() async {
     final date = DateTime.now().toIso8601String().split('T')[0]; // Format date as YYYY-MM-DD
     final url = Uri.parse('http://3.38.191.196/api/planner/$userId/$date');
@@ -70,7 +68,7 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
 
     try {
       final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',// Include token for authentication
+        'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       });
       print("Response status: ${response.statusCode}");
@@ -89,6 +87,32 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       }
     } catch (e) {
       print("Error fetching planner titles: $e");
+    }
+  }
+
+  Future<void> _addTitleToDatabase(String title) async {
+    final date = DateTime.now().toIso8601String().split('T')[0]; // Format date as YYYY-MM-DD
+    final url = Uri.parse('http://3.38.191.196/api/planner/$userId/$date?title=$title');
+    print("Adding title to database via GET: $title");
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print("Title successfully added: $title");
+        await _fetchPlannerTitles(); // Refresh planner titles after successful addition
+      } else {
+        print("Failed to add title: ${response.statusCode}");
+        print("Response body: ${response.body}");
+      }
+    } catch (e) {
+      print("Error adding title to database: $e");
     }
   }
 
@@ -201,7 +225,11 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
                       const SizedBox(width: 8),
                       IconButton(
                         onPressed: () {
-                          print("Add button clicked with input: ${_titleController.text}");
+                          final title = _titleController.text.trim();
+                          if (title.isNotEmpty) {
+                            _addTitleToDatabase(title); // Add title to database via GET
+                            _titleController.clear(); // Clear input field
+                          }
                         },
                         icon: const Icon(Icons.add),
                         color: Colors.black,
@@ -217,13 +245,10 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
                         final title = _plannerTitles[index];
                         final isSelected = title == _selectedTitle;
 
-                        print("Building item for title: $title");
-
                         return GestureDetector(
                           onTap: () {
                             setState(() {
                               _selectedTitle = title;
-                              print("Selected title: $title");
                             });
                           },
                           child: Container(
@@ -262,7 +287,6 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
             right: 16,
             child: GestureDetector(
               onTap: () {
-                print("Navigating to ConcentrateScreen");
                 _navigateToConcentrateScreen();
               },
               child: Container(

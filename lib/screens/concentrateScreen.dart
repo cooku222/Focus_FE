@@ -36,6 +36,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   int? sessionId;
   bool isCapturing = false;
   Duration elapsedTime = Duration.zero;
+  bool isWebcamInitialized = false; // 웹캠 초기화 상태 플래그
 
   String currentTime = '';
   String todayDate = '';
@@ -48,6 +49,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     _initializeWebcam();
     _startSession();
     _connectToWebSocket();
+    _captureAndSendImage();
     _startClock();
   }
 
@@ -77,6 +79,9 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
 
     final stream = await window.navigator.mediaDevices?.getUserMedia({'video': true});
     videoElement.srcObject = stream;
+    setState(() {
+      isWebcamInitialized = true; // 웹캠 초기화 완료
+    });
   }
 
   void _decodeJWT() {
@@ -102,6 +107,65 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       });
     });
   }
+
+  void _captureAndSendImage() {
+    if (!isWebcamInitialized || !isCapturing) return;
+
+    final canvas = CanvasElement(width: 640, height: 480);
+    final ctx = canvas.context2D;
+    ctx.drawImage(videoElement, 0, 0);
+
+    canvas.toBlob().then((blob) async {
+      if (blob == null) {
+        print("Error: Failed to capture frame as blob.");
+        return;
+      }
+
+      try {
+        final arrayBuffer = await _blobToArrayBuffer(blob);
+        final imageBytes = Uint8List.view(arrayBuffer);
+
+        final metadata = jsonEncode({
+          'user_id': widget.userId,
+          'title': widget.title,
+        });
+
+        final metadataBytes = Uint8List.fromList(utf8.encode(metadata + '\n'));
+        final combinedBuffer = Uint8List(metadataBytes.length + imageBytes.length);
+        combinedBuffer.setAll(0, metadataBytes);
+        combinedBuffer.setAll(metadataBytes.length, imageBytes);
+
+        webSocketChannel?.sink.add(combinedBuffer);
+        print("Metadata and image sent.");
+      } catch (e) {
+        print("Error processing image blob: $e");
+      }
+    }).catchError((error) {
+      print("Error converting canvas to Blob: $error");
+    });
+  }
+
+  // Blob → ArrayBuffer 변환 유틸리티 메서드
+  Future<ByteBuffer> _blobToArrayBuffer(Blob blob) {
+    final completer = Completer<ByteBuffer>();
+    final reader = FileReader();
+
+    reader.readAsArrayBuffer(blob); // Blob을 ArrayBuffer로 읽기
+    reader.onLoadEnd.listen((_) {
+      if (reader.result != null) {
+        completer.complete(reader.result as ByteBuffer); // 변환 성공
+      } else {
+        completer.completeError("Failed to convert Blob to ArrayBuffer");
+      }
+    });
+
+    reader.onError.listen((_) {
+      completer.completeError(reader.error ?? "Unknown error during Blob to ArrayBuffer conversion");
+    });
+
+    return completer.future;
+  }
+
 
   String _formatTime(DateTime time) {
     return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')}";
