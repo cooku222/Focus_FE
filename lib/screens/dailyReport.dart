@@ -151,7 +151,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                             const Text(
                               "오늘 집중도 현황",
                               style: TextStyle(
-                                fontSize: 36,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Inter',
                               ),
