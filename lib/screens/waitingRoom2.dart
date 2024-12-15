@@ -6,7 +6,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class WaitingRoom2 extends StatefulWidget {
-  const WaitingRoom2({Key? key, required token, required userId}) : super(key: key);
+  final String token;
+  final int userId;
+  const WaitingRoom2({Key? key, required this.token, required this.userId}) : super(key: key);
+
 
   @override
   State<WaitingRoom2> createState() => _WaitingRoom2State();
@@ -22,17 +25,8 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
 
   @override
   void didChangeDependencies() {
+    _retrieveTokenAndDecode();
     super.didChangeDependencies();
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (arguments != null) {
-      token = arguments['token'];
-      userId = arguments['userId'];
-      print("Token received: $token");
-      print("User ID received: $userId");
-    } else {
-      print("No arguments received.");
-    }
-      _retrieveTokenAndDecode();
   }
 
   Future<void> _retrieveTokenAndDecode() async {
@@ -40,31 +34,22 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (arguments != null && arguments.containsKey('accessToken')) {
         token = arguments['accessToken'];
-      }
-
-      if (token == null) {
-        const storage = FlutterSecureStorage();
-        token = await storage.read(key: 'accessToken');
-        print("Decoded userId: \$token");
-      }
-
-      if (token != null) {
-        const storage = FlutterSecureStorage();
-        final token = await storage.read(key: 'accessToken');
         final payload = JWTUtils.decodeJWT(token!);
         setState(() {
           userId = payload['user_id'];
-          print("Decoded userId: \$userId");
+          print("Decoded userId: $userId");
         });
         await _fetchPlannerTitles();
       } else {
-        print("Token is null");
+        print("Token is null or missing in arguments");
       }
     } catch (e) {
-      print("Error retrieving or decoding token: \$e");
+      print("Error retrieving or decoding token: $e");
       _showLoginError();
     }
   }
+
+
 
   Future<void> _fetchPlannerTitles() async {
     if (userId == null) {

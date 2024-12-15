@@ -1,50 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:focus/utils/jwt_utils.dart';
+import 'package:focus/screens/waitingRoom2.dart';
 
 class AuthGuard extends StatelessWidget {
   final Widget child;
 
   const AuthGuard({Key? key, required this.child}) : super(key: key);
 
-  Future<bool> _isUserLoggedIn() async {
+  Future<Map<String, dynamic>> _getAuthData() async {
     const storage = FlutterSecureStorage();
-    try {
-      String? token = await storage.read(key: 'accessToken');
-      if (token == null || token.isEmpty) {
-        return false;
-      }
-      // Additional validation logic for the token if needed
-      return true;
-    } catch (e) {
-      print("Error checking login status: $e");
-      return false;
+    final token = await storage.read(key: 'accessToken');
+    if (token != null && token.isNotEmpty) {
+      final payload = JWTUtils.decodeJWT(token);
+      final userId = payload['sub']; // JWT에서 userId 추출
+      return {'token': token, 'userId': userId};
     }
+    return {'token': '', 'userId': -1}; // 비인증 상태
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _isUserLoggedIn(),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _getAuthData(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // Loading state
           return const Center(child: CircularProgressIndicator());
         }
-
-        if (snapshot.connectionState == ConnectionState.done) {
-          if (snapshot.hasData && snapshot.data == true) {
-            // User is logged in, render the protected screen
-            return child;
-          } else {
-            // User is not logged in, redirect to login
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushReplacementNamed(context, '/login');
-            });
+        if (snapshot.hasData) {
+          final authData = snapshot.data!;
+          if (authData['token'] != '' && authData['userId'] != -1) {
+            // 인증 성공: WaitingRoom2로 데이터 전달
+            return WaitingRoom2(
+              token: authData['token'],
+              userId: authData['userId'],
+            );
           }
         }
-
-        // Default case to avoid rendering while redirecting
-        return const SizedBox();
+        // 인증 실패: 로그인 화면으로 이동
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(context, '/login');
+        });
+        return const SizedBox(); // 빈 화면 반환
       },
     );
   }
