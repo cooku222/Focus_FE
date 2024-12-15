@@ -101,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 55),
                     const Text(
                       "로그인",
                       style: TextStyle(
@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontWeight: FontWeight.w500,
                         color: Colors.black,
                       ),
-                      textAlign: TextAlign.left,
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 55),
                     Padding(
@@ -127,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontSize: 16,
                               color: Color(0xFF757575),
                             ),
-                            textAlign: TextAlign.left,
+                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
                           Container(
@@ -155,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontSize: 16,
                               color: Color(0xFF757575),
                             ),
-                            textAlign: TextAlign.left,
+                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
                           Container(
