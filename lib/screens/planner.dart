@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import '../widgets/header.dart';
+import '../utils/jwt_utils.dart'; // JWT 디코드 유틸리티 추가
 
 class PlannerScreen extends StatefulWidget {
   final int userId;
@@ -27,6 +28,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
   bool isLoggedIn = false;
   final TextEditingController _taskTitleController = TextEditingController();
+  Map<String, dynamic>? decodedToken; // JWT 디코딩 결과 저장
 
   @override
   void initState() {
@@ -35,12 +37,22 @@ class _PlannerScreenState extends State<PlannerScreen> {
   }
 
   Future<void> _checkLoginStatus() async {
-    final String? loginStatus = await _secureStorage.read(key: 'isLoggedIn');
-    if (loginStatus == 'true') {
-      setState(() {
-        isLoggedIn = true;
-      });
-      _fetchPlannerData(_focusedDay);
+    final String? token = await _secureStorage.read(key: 'accessToken'); // JWT 토큰 읽기
+    if (token != null) {
+      try {
+        // JWT 디코딩
+        decodedToken = JWTUtils.decodeJWT(token);
+        print("Decoded Token: $decodedToken");
+
+        setState(() {
+          isLoggedIn = true;
+        });
+        _fetchPlannerData(_focusedDay);
+      } catch (e) {
+        print("Invalid Token: $e");
+        _secureStorage.delete(key: 'jwtToken'); // 잘못된 토큰 삭제
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     } else {
       Navigator.pushReplacementNamed(context, '/login');
     }
@@ -53,7 +65,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
         "http://3.38.191.196/api/planner/${widget.userId}/$formattedDate";
 
     try {
-      final response = await http.get(Uri.parse(apiUrl));
+      final response = await http.get(Uri.parse(apiUrl), headers: {
+        "Authorization": "Bearer ${await _secureStorage.read(key: 'jwtToken')}"
+      });
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
@@ -85,7 +99,10 @@ class _PlannerScreenState extends State<PlannerScreen> {
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${await _secureStorage.read(key: 'jwtToken')}"
+        },
         body: jsonEncode({"title": title, "state": "대기 중"}),
       );
 

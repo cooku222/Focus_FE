@@ -41,10 +41,14 @@ class MyApp extends StatelessWidget {
         '/register/info3': (context) => const Info3Screen(),
         '/register/info4': (context) => const Info4Screen(),
         '/register/info5': (context) => const Info5Screen(),
-        '/planner': (context) => AuthGuard(
-          child: PlannerScreen(userId: 1, date: DateTime.now()),
-        ), // 플래너 화면 보호
-
+        '/planner': (context) {
+          return AuthGuard(
+            child: PlannerScreen(
+              userId: -1,
+              date: DateTime.now(),
+            ),
+          );
+        },
         '/waitingRoom2': (context) {
           return AuthGuard(
             child: WaitingRoom2(
