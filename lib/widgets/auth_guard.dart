@@ -13,10 +13,10 @@ class AuthGuard extends StatelessWidget {
     final token = await storage.read(key: 'accessToken');
     if (token != null && token.isNotEmpty) {
       final payload = JWTUtils.decodeJWT(token);
-      final userId = payload['sub']; // JWT에서 userId 추출
-      return {'token': token, 'userId': userId};
+      final userId = payload['user_id']; // JWT에서 userId 추출
+      return {'accessToken': token, 'userId': userId};
     }
-    return {'token': '', 'userId': -1}; // 비인증 상태
+    return {'accessToken': '', 'userId': -1}; // 비인증 상태
   }
 
   @override
@@ -29,10 +29,10 @@ class AuthGuard extends StatelessWidget {
         }
         if (snapshot.hasData) {
           final authData = snapshot.data!;
-          if (authData['token'] != '' && authData['userId'] != -1) {
+          if (authData['accessToken'] != '' && authData['userId'] != -1) {
             // 인증 성공: WaitingRoom2로 데이터 전달
             return WaitingRoom2(
-              token: authData['token'],
+              token: authData['accessToken'],
               userId: authData['userId'],
             );
           }

@@ -32,17 +32,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        final accessToken = responseData['accessToken'];
-        if (accessToken == null) {
+        final token = responseData['accessToken'];
+        if (token == null) {
           throw Exception("Access token is missing in the response.");
         }
 
         // Save the token securely
-        await storage.write(key: 'accessToken', value: accessToken);
-        print("Token saved successfully: $accessToken");
+        await storage.write(key: 'accessToken', value: token);
+        print("Token saved successfully: $token");
 
         // Decode the JWT
-        final payload = JWTUtils.decodeJWT(accessToken);
+        final payload = JWTUtils.decodeJWT(token);
         print("Decoded JWT: $payload");
 
         Navigator.pushReplacementNamed(context, '/');

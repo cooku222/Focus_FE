@@ -67,7 +67,7 @@ class MyApp extends StatelessWidget {
           return AuthGuard(
             child: DailyReportScreen(
               userId: args?['userId'] ?? -1,
-              token: args?['accessToken'] ?? '',
+              token: args?['token'] ?? '',
               date: args?['date'] ?? '',
               title: args?['title'] ?? '',
             ),
@@ -137,7 +137,7 @@ class _MainScreenState extends State<MainScreen> {
       if (token != null && token.isNotEmpty) {
         // Decode the token to verify validity
         final payload = JWTUtils.decodeJWT(token);
-        final userId = payload['sub']; // Assuming 'sub' contains the user ID
+        final userId = payload['user_id']; // Assuming 'sub' contains the user ID
 
         if (userId != null) {
           print("User is logged in. User ID: $userId");
@@ -264,15 +264,15 @@ class _MainScreenState extends State<MainScreen> {
                   _TopBlock(
                     onMeasureTap: () async {
                       const storage = FlutterSecureStorage();
-                      String? accessToken = await storage.read(key: 'accessToken'); // 저장된 토큰 읽기
+                      String? token = await storage.read(key: 'accessToken'); // 저장된 토큰 읽기
                       int? userId; // JWT에서 userId 추출용
 
-                      if (accessToken != null && accessToken.isNotEmpty) {
+                      if (token != null && token.isNotEmpty) {
                         // JWT를 디코딩하여 userId를 가져옵니다.
-                        final payload = JWTUtils.decodeJWT(accessToken);
-                        userId = payload['sub']; // JWT에서 userId 추출
+                        final payload = JWTUtils.decodeJWT(token);
+                        userId = payload['user_id']; // JWT에서 userId 추출
                       }
-                      if (accessToken == null || userId == null) {
+                      if (token == null || userId == null) {
                         // 토큰이나 userId가 없으면 로그인을 요청합니다.
                         print("Access token or user ID is missing. Redirecting to login.");
                         Navigator.pushNamed(context, '/login');
@@ -282,7 +282,7 @@ class _MainScreenState extends State<MainScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => WaitingRoom2(
-                            token: accessToken, // 전달할 accessToken
+                            token: token, // 전달할 accessToken
                             userId: userId ?? -1,     // 전달할 userId
                           ),
                         ),
@@ -447,7 +447,7 @@ class _TopBlock extends StatelessWidget {
       if (token != null && token.isNotEmpty) {
         // JWT 디코딩을 통해 토큰 유효성 확인
         final payload = JWTUtils.decodeJWT(token);
-        final userId = payload['sub']; // JWT에서 사용자 ID 추출
+        final userId = payload['user_id']; // JWT에서 사용자 ID 추출
 
         if (userId != null) {
           // 로그인 상태라면 WaitingRoom으로 이동
@@ -455,8 +455,8 @@ class _TopBlock extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => WaitingRoom2(
-                token: 'accessToken', // 전달할 accessToken
-                userId: int.tryParse(userId) ?? -1,     // 전달할 userId
+                token: token, // 전달할 accessToken
+                userId: userId ?? -1,     // 전달할 userId
               ),
             ),
           );
