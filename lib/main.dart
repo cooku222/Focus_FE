@@ -78,7 +78,11 @@ class MyApp extends StatelessWidget {
           );
         },
         // 일일 리포트 화면 보호
-        '/myPage': (context) => AuthGuard(child: const MyPageScreen()), // 마이페이지 보호
+        '/myPage': (context) {
+          return AuthGuard(
+            child: MyPageScreen()
+          );
+        }, // 마이페이지 보호
       },
       onUnknownRoute: (settings) {
         // 잘못된 경로 처리
@@ -239,10 +243,18 @@ class _MainScreenState extends State<MainScreen> {
                     MaterialPageRoute(
                       builder: (context) => DailyReportScreen(
                         userId: 1, // Replace with actual user ID
-                        date: "2024-12-05", // Example date in string format
+                        date: '', // Example date in string format
                         title: '',
                         token: '',
                       ),
+                    ),
+                  );
+                },
+                onMyPageTap: () { // New functionality added
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MyPageScreen(), // Navigate to MyPage screen
                     ),
                   );
                 },
