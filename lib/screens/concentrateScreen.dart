@@ -1,5 +1,5 @@
-import 'dart:html';
 import 'dart:async';
+import 'dart:html';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -30,28 +30,31 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   WebSocketChannel? webSocketChannel;
   Timer? captureTimer;
   Timer? pingTimer;
+  Timer? clockTimer;
+
   int? sessionId;
-  int? userId;
-
-  bool isWebcamInitialized = false;
   bool isCapturing = false;
+  Duration elapsedTime = Duration.zero;
 
+  String currentTime = '';
+  String todayDate = '';
   String webSocketStatus = "Connecting...";
-  String selectedDate = "2024-12-01"; // 초기 날짜 설정
 
   @override
   void initState() {
     super.initState();
+    _decodeJWT();
     _initializeWebcam();
     _startSession();
     _connectToWebSocket();
-    _decodeJWT();
+    _startClock();
   }
 
   @override
   void dispose() {
     _closeWebSocket();
     captureTimer?.cancel();
+    clockTimer?.cancel();
     super.dispose();
   }
 
@@ -64,12 +67,38 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     try {
       final stream = await window.navigator.mediaDevices?.getUserMedia({'video': true});
       videoElement.srcObject = stream;
-      setState(() {
-        isWebcamInitialized = true;
-      });
     } catch (error) {
       print('Error accessing webcam: $error');
     }
+  }
+
+  void _decodeJWT() {
+    try {
+      final payload = JWTUtils.decodeJWT(widget.token);
+      print("Decoded JWT: $payload");
+    } catch (e) {
+      print("Failed to decode JWT: $e");
+    }
+  }
+
+
+  void _startClock() {
+    final now = DateTime.now();
+    setState(() {
+      currentTime = _formatTime(now);
+      todayDate = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    });
+
+    clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final now = DateTime.now();
+      setState(() {
+        currentTime = _formatTime(now);
+      });
+    });
+  }
+
+  String _formatTime(DateTime time) {
+    return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')}";
   }
 
   Future<void> _startSession() async {
@@ -86,7 +115,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         sessionId = responseData['sessionId'];
-        print("Session started successfully with ID: $sessionId");
       } else {
         print("Failed to start session: ${response.statusCode} ${response.body}");
       }
@@ -125,32 +153,26 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
         webSocketStatus = "Connected";
       });
 
-      // Listen for WebSocket messages
       webSocketChannel!.stream.listen(
             (message) {
           print("Message from server: $message");
         },
         onError: (error) {
-          print("WebSocket Error: $error");
           setState(() {
             webSocketStatus = "Error: $error";
           });
         },
         onDone: () {
-          print("WebSocket connection closed.");
           setState(() {
             webSocketStatus = "Disconnected";
           });
         },
       );
 
-      // Send ping messages to keep the WebSocket alive
       pingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
         webSocketChannel?.sink.add(jsonEncode({"type": "ping"}));
-        print("Ping sent to keep connection alive.");
       });
     } catch (e) {
-      print("Failed to connect to WebSocket: $e");
       setState(() {
         webSocketStatus = "Failed to connect: $e";
       });
@@ -160,154 +182,141 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   void _closeWebSocket() {
     pingTimer?.cancel();
     webSocketChannel?.sink.close();
-    print("WebSocket connection closed by user.");
   }
 
-  void _decodeJWT() {
-    try {
-      final payload = JWTUtils.decodeJWT(widget.token);
-      print("Decoded JWT: $payload");
-    } catch (e) {
-      print("Failed to decode JWT: $e");
-    }
-  }
-
-  void _captureAndSendImage() {
-    if (!isWebcamInitialized || !isCapturing) return;
-
-    final canvas = CanvasElement(width: 640, height: 480);
-    final ctx = canvas.context2D;
-    ctx.drawImage(videoElement, 0, 0);
-
-    canvas.toBlob().then((blob) async {
-      if (blob == null) {
-        print("Error: Failed to capture frame as blob.");
-        return;
-      }
-
-      try {
-        final arrayBuffer = await _blobToArrayBuffer(blob);
-        final imageBytes = Uint8List.view(arrayBuffer);
-
-        final metadata = jsonEncode({
-          'user_id': widget.userId,
-          'title': widget.title,
+  void _toggleCapture() {
+    if (isCapturing) {
+      captureTimer?.cancel();
+    } else {
+      captureTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        setState(() {
+          elapsedTime += const Duration(seconds: 1);
         });
-
-        final metadataBytes = Uint8List.fromList(utf8.encode(metadata + '\n'));
-        final combinedBuffer = Uint8List(metadataBytes.length + imageBytes.length);
-        combinedBuffer.setAll(0, metadataBytes);
-        combinedBuffer.setAll(metadataBytes.length, imageBytes);
-
-        webSocketChannel?.sink.add(combinedBuffer);
-        print("Metadata and image sent.");
-      } catch (e) {
-        print("Error processing image blob: $e");
-      }
-    }).catchError((error) {
-      print("Error converting canvas to Blob: $error");
-    });
-  }
-
-  Future<ByteBuffer> _blobToArrayBuffer(Blob blob) {
-    return promiseToFuture(callMethod(blob, 'arrayBuffer', []));
-  }
-
-  void _startCapturing() {
-    if (isCapturing || !isWebcamInitialized) return;
+      });
+    }
 
     setState(() {
-      isCapturing = true;
+      isCapturing = !isCapturing;
     });
-
-    captureTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      _captureAndSendImage();
-    });
-  }
-
-  void _stopCapturing() {
-    if (!isCapturing) return;
-
-    setState(() {
-      isCapturing = false;
-    });
-
-    captureTimer?.cancel();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF242424),
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Current Time (Top Center)
+          Positioned(
+            top: 50,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                currentTime,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 128,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+
+          // Webcam (Center Bottom)
+          Center(
+            child: Container(
+              width: 320,
+              height: 240,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: HtmlElementView(viewType: 'webcam-view'),
+            ),
+          ),
+
+          // Bottom Info (Date & Time)
+          Positioned(
+            bottom: 100,
+            left: 0,
+            right: 0,
+            child: Column(
               children: [
                 Text(
-                  "WebSocket Status: $webSocketStatus",
-                  style: const TextStyle(fontSize: 16, color: Colors.white),
+                  todayDate,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 32,
+                    color: Colors.white,
+                  ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Session 종료 로직
+                const SizedBox(height: 8),
+                Text(
+                  "Elapsed Time: ${elapsedTime.inMinutes}:${(elapsedTime.inSeconds % 60).toString().padLeft(2, '0')}",
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 32,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Right Bottom Buttons
+          Positioned(
+            bottom: 80,
+            right: 20,
+            child: Column(
+              children: [
+                // Start/Pause Button
+                GestureDetector(
+                  onTap: _toggleCapture,
+                  child: CircleAvatar(
+                    radius: 32,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      isCapturing ? Icons.pause : Icons.play_arrow,
+                      color: Colors.black,
+                      size: 32,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Power Button
+                GestureDetector(
+                  onTap: () {
                     _endSession();
                     _closeWebSocket();
-
-                    // DailyReportScreen으로 이동하며 필요한 데이터를 전달
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => DailyReportScreen(
-                          userId: widget.userId, // 현재 사용자의 ID
-                          token: widget.token,   // 인증 토큰
-                          date: selectedDate,    // 측정한 날짜를 전달
-                          title: widget.title,   // 전달하고자 하는 title 값
+                          userId: widget.userId,
+                          token: widget.token,
+                          date: todayDate,
+                          title: widget.title,
                         ),
                       ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                  child: CircleAvatar(
+                    radius: 32,
+                    backgroundColor: Colors.white,
+                    child: const Icon(
+                      Icons.power_settings_new,
+                      color: Colors.red,
+                      size: 32,
+                    ),
                   ),
-                  child: const Text("Exit"),
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: isWebcamInitialized
-                ? Center(
-              child: Container(
-                width: 320,
-                height: 240,
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-                child: HtmlElementView(viewType: 'webcam-view'),
-              ),
-            )
-                : const Center(child: CircularProgressIndicator()),
-          ),
-          if (isWebcamInitialized)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: _startCapturing,
-                  child: const Text("Start Capturing"),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _stopCapturing,
-                  child: const Text("Stop Capturing"),
-                ),
-              ],
-            ),
         ],
       ),
     );
