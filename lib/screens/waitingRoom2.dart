@@ -71,16 +71,17 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
     try {
       final response = await http.get(url, headers: {
         'Content-Type': 'application/json',// Include token for authentication
+        'Authorization': 'Bearer $token',
       });
       print("Response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List<dynamic>;
+        final List<String> titles = data.map((item) {
+          return item["title"]?.toString() ?? "Untitled";
+        }).toList();
         setState(() {
-          _plannerTitles = data.map((item) {
-            return item["title"] as String; // Safely access title field
-          }).toList();
-          print("Fetched planner titles: $_plannerTitles");
+          _plannerTitles = titles;
         });
       } else {
         print("Failed to fetch planner titles: ${response.statusCode}");
