@@ -163,38 +163,42 @@ class _WeeklyReportScreenState extends State<WeeklyReportScreen> {
   }
 
   Widget buildSolutionBox() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: const Color(0xFF327B9E),
-          width: 2,
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Container(
+        margin: const EdgeInsets.only(left: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: const Color(0xFF327B9E),
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(10),
         ),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '주간 집중 솔루션',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '주간 집중 솔루션',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            '1. 학습 세션 단축 및 단계적 증가\n'
-                '2. 내용 다양화 및 분할\n'
-                '3. 운동과 신체활동 루틴 추가\n'
-                '4. 보상 시스템 도입\n'
-                '5. 학습 환경 변화\n'
-                '6. 잠재적 스트레스 요인 파악\n'
-                '7. 마인드 리프레시 시간 도입\n'
-                '8. 포기 대신 전환의 원칙 적용\n',
-            style: TextStyle(fontSize: 16),
-          ),
-        ],
+            const SizedBox(height: 10),
+            const Text(
+              '1. 학습 세션 단축 및 단계적 증가\n'
+                  '2. 내용 다양화 및 분할\n'
+                  '3. 운동과 신체활동 루틴 추가\n'
+                  '4. 보상 시스템 도입\n'
+                  '5. 학습 환경 변화\n'
+                  '6. 잠재적 스트레스 요인 파악\n'
+                  '7. 마인드 리프레시 시간 도입\n'
+                  '8. 포기 대신 전환의 원칙 적용\n',
+              style: TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
       ),
     );
   }
