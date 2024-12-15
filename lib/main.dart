@@ -137,7 +137,7 @@ class _MainScreenState extends State<MainScreen> {
       if (token != null && token.isNotEmpty) {
         // Decode the token to verify validity
         final payload = JWTUtils.decodeJWT(token);
-        final userId = payload['user_id']; // Assuming 'sub' contains the user ID
+        final userId = payload['sub']; // Assuming 'sub' contains the user ID
 
         if (userId != null) {
           print("User is logged in. User ID: $userId");
