@@ -11,14 +11,14 @@ class DailyReportScreen extends StatefulWidget {
   final int userId;
   final String token;
   final String date;
-  final String title; // 추가된 title
+  final String title;
 
   const DailyReportScreen({
     Key? key,
     required this.userId,
     required this.token,
     required this.date,
-    required this.title, // title 파라미터 추가
+    required this.title,
   }) : super(key: key);
 
   @override
@@ -32,23 +32,12 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
   bool hasError = false;
   String selectedDate = "";
 
-  late int userId;
-
   @override
   void initState() {
-    _decodeJWT();
     super.initState();
+    _decodeJWT();
     selectedDate = widget.date;
     fetchDailyReport();
-  }
-
-  void _decodeJWT() {
-    try {
-      final decodedJWT = JWTUtils.decodeJWT(widget.token);
-      print("Decoded JWT: $decodedJWT");
-    } catch (e) {
-      print("Failed to decode JWT: $e");
-    }
   }
 
   Future<void> fetchDailyReport() async {
@@ -74,6 +63,14 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
     }
   }
 
+  void _decodeJWT() {
+    try {
+      final decodedJWT = JWTUtils.decodeJWT(widget.token);
+      print("Decoded JWT: $decodedJWT");
+    } catch (e) {
+      print("Failed to decode JWT: $e");
+    }
+  }
   void _openCalendar() {
     showDatePicker(
       context: context,
@@ -125,175 +122,139 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
+      body: Stack(
         children: [
-          const Header(title: 'Daily Report'),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () {
-                        final date = DateTime.parse(selectedDate)
-                            .subtract(const Duration(days: 1));
-                        setState(() {
-                          selectedDate = DateFormat('yyyy-MM-dd').format(date);
-                          isLoading = true;
-                        });
-                        fetchDailyReport();
-                      },
-                    ),
-                    GestureDetector(
-                      onTap: _openCalendar,
-                      child: Text(
-                        selectedDate,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
+          Column(
+            children: [
+              const Header(title: 'Daily Report'),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left: Title, Task Table
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "일일 리포트",
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Title Hero',
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              "오늘 집중도 현황",
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Inter',
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: taskList.length,
+                                itemBuilder: (context, index) {
+                                  final task = taskList[index];
+                                  return Card(
+                                    child: ListTile(
+                                      title: Text(task['title']),
+                                      subtitle: Text(
+                                          '집중도: ${(task['focusRatio'] * 100).toStringAsFixed(1)}%'),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward),
-                      onPressed: () {
-                        final date = DateTime.parse(selectedDate)
-                            .add(const Duration(days: 1));
-                        setState(() {
-                          selectedDate = DateFormat('yyyy-MM-dd').format(date);
-                          isLoading = true;
-                        });
-                        fetchDailyReport();
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Left: Task List
-                  Expanded(
-                    flex: 3,
-                    child: ListView.builder(
-                      itemCount: taskList.length,
-                      itemBuilder: (context, index) {
-                        final task = taskList[index];
-                        return Card(
-                          child: ListTile(
-                            title: Text(task['title']),
-                            subtitle: Text(
-                                '집중도: ${(task['focusRatio'] * 100).toStringAsFixed(1)}%'),
-                            onTap: () {
-                              // Update pie chart to focus on specific task
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  // Right: Date, Focus Chart, and Title Table
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          selectedDate,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          '집중도',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 36,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Expanded(
-                          child: PieChart(
-                            PieChartData(
-                              sections: [
-                                PieChartSectionData(
-                                  color: const Color(0xFF5EC5EB),
-                                  value: focusedRatio * 100,
-                                  title:
-                                  '${(focusedRatio * 100).toStringAsFixed(1)}%',
-                                  titleStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: Colors.white,
-                                  ),
+
+                      const SizedBox(width: 16),
+
+                      // Right: Date, Focus Chart
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: _openCalendar,
+                              child: Text(
+                                selectedDate,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Inter',
+                                  decoration: TextDecoration.underline,
                                 ),
-                                PieChartSectionData(
-                                  color: const Color(0xFF4C9BB8),
-                                  value: notFocusedRatio * 100,
-                                  title:
-                                  '${(notFocusedRatio * 100).toStringAsFixed(1)}%',
-                                  titleStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                              sectionsSpace: 0,
-                              centerSpaceRadius: 50,
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Title Table
-                        const Text(
-                          'Session Title',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        DataTable(
-                          columns: const [
-                            DataColumn(label: Text('Field')),
-                            DataColumn(label: Text('Value')),
+                            const SizedBox(height: 24),
+                            const Text(
+                              "집중도",
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Inter',
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Expanded(
+                              child: PieChart(
+                                PieChartData(
+                                  sections: [
+                                    PieChartSectionData(
+                                      color: const Color(0xFF5EC5EB),
+                                      value: focusedRatio * 100,
+                                      title:
+                                      '${(focusedRatio * 100).toStringAsFixed(1)}%',
+                                      titleStyle: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    PieChartSectionData(
+                                      color: const Color(0xFF4C9BB8),
+                                      value: notFocusedRatio * 100,
+                                      title:
+                                      '${(notFocusedRatio * 100).toStringAsFixed(1)}%',
+                                      titleStyle: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                  sectionsSpace: 0,
+                                  centerSpaceRadius: 50,
+                                ),
+                              ),
+                            ),
                           ],
-                          rows: [
-                            DataRow(cells: [
-                              const DataCell(Text('Title')),
-                              DataCell(Text(widget.title)),
-                            ]),
-                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-          // Weekly Report Button
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacement(
+
+          // Right Bottom: Weekly Report Button
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => WeeklyReportScreen(
@@ -303,20 +264,23 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                   ),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding:
-                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                "주간 리포트 보기",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.black, width: 2),
                   color: Colors.white,
+                ),
+                child: const Center(
+                  child: Text(
+                    ">",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
                 ),
               ),
             ),
