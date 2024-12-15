@@ -133,7 +133,7 @@ class _WeeklyReportScreenState extends State<WeeklyReportScreen> {
                     BarChartRodStackItem(notFocusedTimeHours, focusedTimeHours + notFocusedTimeHours,
                         const Color(0xFF0019FF)),
                   ],
-                  width: 12,
+                  width: 20,
                 ),
               ],
             );

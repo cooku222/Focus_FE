@@ -136,6 +136,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       final response = await http.post(
         Uri.parse("http://3.38.191.196/api/video-session/end/$sessionId"),
         headers: {
+          "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}"
         },
       );
@@ -175,7 +176,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
         },
       );
 
-      pingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      pingTimer = Timer.periodic(const Duration(seconds: 2), (_) {
         webSocketChannel?.sink.add(jsonEncode({"type": "ping"}));
       });
     } catch (e) {
