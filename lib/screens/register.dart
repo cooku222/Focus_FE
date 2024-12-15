@@ -21,6 +21,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    _register();
     emailController.dispose();
     nicknameController.dispose();
     passwordController.dispose();
@@ -70,7 +71,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('회원가입 성공!')),
         );
-        Navigator.pushReplacementNamed(context, '/register/info1'); // Updated Route Transition
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Info1Screen()),
+        );// Updated Route Transition
       } else {
         final error = jsonDecode(response.body)['message'] ?? '회원가입 실패';
         ScaffoldMessenger.of(context).showSnackBar(
