@@ -269,7 +269,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                 height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.black, width: 2),
+                  border: Border.all(color: Colors.grey, width: 2),
                   color: Colors.white,
                 ),
                 child: const Center(

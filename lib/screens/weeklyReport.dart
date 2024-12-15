@@ -134,6 +134,7 @@ class _WeeklyReportScreenState extends State<WeeklyReportScreen> {
                         const Color(0xFF0019FF)),
                   ],
                   width: 20,
+                  borderRadius: BorderRadius.zero,
                 ),
               ],
             );
