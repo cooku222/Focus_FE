@@ -58,6 +58,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     clockTimer?.cancel();
     super.dispose();
   }
+
   static bool isViewFactoryRegistered = false;
 
   void _initializeWebcam() async {
@@ -86,7 +87,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       print("Failed to decode JWT: $e");
     }
   }
-
 
   void _startClock() {
     final now = DateTime.now();
@@ -317,6 +317,24 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                     child: const Icon(
                       Icons.power_settings_new,
                       color: Colors.red,
+                      size: 32,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // New + Button
+                GestureDetector(
+                  onTap: () async {
+                    await _endSession(); // End session and save to database
+                    _closeWebSocket(); // Close the WebSocket connection
+                    Navigator.pushReplacementNamed(context, '/waitingRoom2'); // Navigate to waitingRoom2
+                  },
+                  child: CircleAvatar(
+                    radius: 32,
+                    backgroundColor: Colors.white,
+                    child: const Icon(
+                      Icons.add,
+                      color: Colors.black,
                       size: 32,
                     ),
                   ),
