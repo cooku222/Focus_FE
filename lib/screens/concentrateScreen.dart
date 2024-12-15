@@ -1,3 +1,4 @@
+import 'dart:ui_web' as ui;
 import 'dart:async';
 import 'dart:html';
 import 'dart:typed_data';
@@ -57,19 +58,24 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
     clockTimer?.cancel();
     super.dispose();
   }
+  static bool isViewFactoryRegistered = false;
 
-  Future<void> _initializeWebcam() async {
+  void _initializeWebcam() async {
     videoElement = VideoElement()
       ..width = 640
       ..height = 480
       ..autoplay = true;
 
-    try {
-      final stream = await window.navigator.mediaDevices?.getUserMedia({'video': true});
-      videoElement.srcObject = stream;
-    } catch (error) {
-      print('Error accessing webcam: $error');
+    if (!isViewFactoryRegistered) {
+      ui.platformViewRegistry.registerViewFactory(
+        'webcam-view',
+            (int viewId) => videoElement,
+      );
+      isViewFactoryRegistered = true;
     }
+
+    final stream = await window.navigator.mediaDevices?.getUserMedia({'video': true});
+    videoElement.srcObject = stream;
   }
 
   void _decodeJWT() {
