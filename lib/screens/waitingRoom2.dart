@@ -60,7 +60,6 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       });
     }
   }
-
   Future<void> _fetchPlannerTitles() async {
     final date = DateTime.now().toIso8601String().split('T')[0]; // Format date as YYYY-MM-DD
     final url = Uri.parse('http://3.38.191.196/api/planner/$userId/$date');
@@ -90,23 +89,27 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
     }
   }
 
+
   Future<void> _addTitleToDatabase(String title) async {
     final date = DateTime.now().toIso8601String().split('T')[0]; // Format date as YYYY-MM-DD
-    final url = Uri.parse('http://3.38.191.196/api/planner/$userId/$date?title=$title');
-    print("Adding title to database via GET: $title");
+    final url = Uri.parse('http://3.38.191.196/api/planner/$userId/$date'); // URL 그대로 유지
+    print("Adding title to database via POST: $title");
 
     try {
-      final response = await http.get(
+      final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
+        body: jsonEncode({
+          "title": title, // POST 요청의 Body에 title 추가
+        }),
       );
 
       if (response.statusCode == 200) {
         print("Title successfully added: $title");
-        await _fetchPlannerTitles(); // Refresh planner titles after successful addition
+        await _fetchPlannerTitles(); // 성공 후 플래너 타이틀 새로고침
       } else {
         print("Failed to add title: ${response.statusCode}");
         print("Response body: ${response.body}");
@@ -115,6 +118,7 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       print("Error adding title to database: $e");
     }
   }
+
 
   void _showLoginError() {
     showDialog(

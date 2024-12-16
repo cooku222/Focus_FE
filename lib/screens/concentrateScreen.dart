@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:js/js_util.dart';
 import 'package:http/http.dart' as http;
+import 'dart:ui_web' as ui;
 
 class ConcentrateScreen extends StatefulWidget {
   final int userId;
@@ -39,6 +40,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   @override
   void initState() {
     super.initState();
+    _registerWebcamView();
     _initializeWebcam();
     _connectToWebSocket();
     _startClock();
@@ -78,7 +80,24 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       });
     });
   }
+  void _registerWebcamView() {
+    ui.platformViewRegistry.registerViewFactory(
+      'webcam-view',
+          (int viewId) {
+        final videoElement = VideoElement()
+          ..width = 640
+          ..height = 480
+          ..autoplay = true;
 
+        // 사용자 카메라 스트림 연결
+        window.navigator.mediaDevices?.getUserMedia({'video': true}).then((stream) {
+          videoElement.srcObject = stream;
+        });
+
+        return videoElement;
+      },
+    );
+  }
   String _formatTime(DateTime time) {
     return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')}";
   }
