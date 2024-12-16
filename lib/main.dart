@@ -194,7 +194,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   void dispose() {
-    _pageController.dispose(); // WebSocket 종료
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -313,7 +313,6 @@ class _MainScreenState extends State<MainScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Text(
                         "About FOCUS",
@@ -346,12 +345,9 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      ...contentList.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        Map<String, String> content = entry.value;
-                        bool isImageCenter = index % 2 == 0;
-                        return _buildContentSection(content, isImageCenter);
-                      }).toList(),
+                      for (var entry in contentList.asMap().entries)
+                        _buildContentSection(entry.value, entry.key % 2 == 0),
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -362,14 +358,14 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-  Widget _buildContentSection(Map<String, String> content, bool isImageLeft) {
+  Widget _buildContentSection(Map<String, String> content, bool isImageCenter) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (isImageLeft) ...[
+          if (isImageCenter) ...[
             Image.asset(
               content['imagePath']!,
               width: 583,
