@@ -104,7 +104,8 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  final PageController _pageController = PageController(initialPage: 0);// WebSocket 매니저 초기화
+  final PageController _pageController = PageController(
+      initialPage: 0); // WebSocket 매니저 초기화
 
   final List<Map<String, String>> contentList = [
     {
@@ -133,7 +134,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   void initState() {
-    super.initState();// WebSocket 연결
+    super.initState(); // WebSocket 연결
     _checkLoginStatus();
     _fetchUsername();
   }
@@ -141,7 +142,8 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _checkLoginStatus() async {
     try {
       const storage = FlutterSecureStorage();
-      String? token = await storage.read(key: 'accessToken'); // Check for the token
+      String? token = await storage.read(
+          key: 'accessToken'); // Check for the token
       if (token != null && token.isNotEmpty) {
         // Decode the token to verify validity
         final payload = JWTUtils.decodeJWT(token);
@@ -177,7 +179,8 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _fetchUsername() async {
     // Simulating fetching username from secure storage or API
-    final fetchedUsername = await Future.value("John Doe"); // Replace with actual fetch logic
+    final fetchedUsername = await Future.value(
+        "John Doe"); // Replace with actual fetch logic
     setState(() {
       username = fetchedUsername;
     });
@@ -205,7 +208,7 @@ class _MainScreenState extends State<MainScreen> {
         color: Colors.white,
         child: SingleChildScrollView(
           child:
-            Column(
+          Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -214,10 +217,11 @@ class _MainScreenState extends State<MainScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PlannerScreen(
-                        userId: 1, // Replace with actual user ID
-                        date: DateTime.now(), // Current date
-                      ),
+                      builder: (context) =>
+                          PlannerScreen(
+                            userId: 1, // Replace with actual user ID
+                            date: DateTime.now(), // Current date
+                          ),
                     ),
                   );
                 },
@@ -241,12 +245,13 @@ class _MainScreenState extends State<MainScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => DailyReportScreen(
-                        userId: 1, // Replace with actual user ID
-                        date: '', // Example date in string format
-                        title: '',
-                        token: '',
-                      ),
+                      builder: (context) =>
+                          DailyReportScreen(
+                            userId: 1, // Replace with actual user ID
+                            date: '', // Example date in string format
+                            title: '',
+                            token: '',
+                          ),
                     ),
                   );
                 },
@@ -254,7 +259,8 @@ class _MainScreenState extends State<MainScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => MyPageScreen(), // Navigate to MyPage screen
+                      builder: (context) =>
+                          MyPageScreen(), // Navigate to MyPage screen
                     ),
                   );
                 },
@@ -280,7 +286,8 @@ class _MainScreenState extends State<MainScreen> {
                   _TopBlock(
                     onMeasureTap: () async {
                       const storage = FlutterSecureStorage();
-                      String? token = await storage.read(key: 'accessToken'); // 저장된 토큰 읽기
+                      String? token = await storage.read(
+                          key: 'accessToken'); // 저장된 토큰 읽기
                       int? userId; // JWT에서 userId 추출용
 
                       if (token != null && token.isNotEmpty) {
@@ -290,17 +297,19 @@ class _MainScreenState extends State<MainScreen> {
                       }
                       if (token == null || userId == null) {
                         // 토큰이나 userId가 없으면 로그인을 요청합니다.
-                        print("Access token or user ID is missing. Redirecting to login.");
+                        print(
+                            "Access token or user ID is missing. Redirecting to login.");
                         Navigator.pushNamed(context, '/login');
                         return;
                       }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => WaitingRoom2(
-                            token: token, // 전달할 accessToken
-                            userId: userId ?? -1,     // 전달할 userId
-                          ),
+                          builder: (context) =>
+                              WaitingRoom2(
+                                token: token, // 전달할 accessToken
+                                userId: userId ?? -1, // 전달할 userId
+                              ),
                         ),
                       );
                     },
@@ -311,7 +320,8 @@ class _MainScreenState extends State<MainScreen> {
               const SizedBox(height: 45),
               Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 10.0, horizontal: 5.0),
                   child: Column(
                     children: [
                       const Text(
@@ -338,15 +348,20 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                       const SizedBox(height: 20),
                       Container(
-                        width: MediaQuery.of(context).size.width * 0.4,
+                        width: MediaQuery
+                            .of(context)
+                            .size
+                            .width * 0.4,
                         child: Image.asset(
                           'images/3.png',
                           fit: BoxFit.contain,
                         ),
                       ),
                       const SizedBox(height: 20),
-                      for (var entry in contentList.asMap().entries)
-                        _buildContentSection(entry.value, entry.key % 2 == 0),
+                      for (var entry in contentList
+                          .asMap()
+                          .entries)
+                        _buildContentSection(entry.value, entry.key % 10 == 0),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -358,11 +373,12 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
+
   Widget _buildContentSection(Map<String, String> content, bool isImageCenter) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 10.0), // 상하 여백 조정
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceAround, // 간격 조정
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (isImageCenter) ...[
@@ -372,10 +388,10 @@ class _MainScreenState extends State<MainScreen> {
               height: 412,
               fit: BoxFit.cover,
             ),
-            const SizedBox(width: 30),
+            const SizedBox(width: 16), // 좌우 간격 줄임
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     content['title']!,
@@ -386,10 +402,10 @@ class _MainScreenState extends State<MainScreen> {
                       color: Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8), // 텍스트 상하 간격 줄임
                   Text(
                     content['description']!,
-                    textAlign: TextAlign.center,
+                    textAlign: TextAlign.left,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w400,
@@ -400,49 +416,48 @@ class _MainScreenState extends State<MainScreen> {
                 ],
               ),
             ),
-          ] else ...[
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    content['title']!,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: "Noto Sans",
-                      color: Colors.black,
+          ] else
+            ...[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      content['title']!,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: "Noto Sans",
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    content['description']!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w400,
-                      fontFamily: "Noto Sans",
-                      color: Colors.black,
+                    const SizedBox(height: 8), // 텍스트 간격 줄임
+                    Text(
+                      content['description']!,
+                      textAlign: TextAlign.left,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w400,
+                        fontFamily: "Noto Sans",
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 30),
-            Image.asset(
-              content['imagePath']!,
-              width: 583,
-              height: 412,
-              fit: BoxFit.cover,
-            ),
-          ]
+              const SizedBox(width: 5), // 좌우 간격 줄임
+              Image.asset(
+                content['imagePath']!,
+                width: 583,
+                height: 412,
+                fit: BoxFit.cover,
+              ),
+            ],
         ],
       ),
     );
   }
 }
-
 
 class _TopBlock extends StatelessWidget {
   final String username; // Accept username
