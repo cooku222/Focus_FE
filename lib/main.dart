@@ -388,7 +388,7 @@ class _MainScreenState extends State<MainScreen> {
               height: 412,
               fit: BoxFit.cover,
             ),
-            const SizedBox(width: 16), // 좌우 간격 줄임
+            const SizedBox(width: 5), // 좌우 간격 줄임
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,7 +402,7 @@ class _MainScreenState extends State<MainScreen> {
                       color: Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 8), // 텍스트 상하 간격 줄임
+                  const SizedBox(height: 5), // 텍스트 상하 간격 줄임
                   Text(
                     content['description']!,
                     textAlign: TextAlign.left,
@@ -431,7 +431,7 @@ class _MainScreenState extends State<MainScreen> {
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 8), // 텍스트 간격 줄임
+                    const SizedBox(height: 5), // 텍스트 간격 줄임
                     Text(
                       content['description']!,
                       textAlign: TextAlign.left,
