@@ -79,26 +79,51 @@ class Header extends StatelessWidget {
   }
 }
 
-class _HeaderTextButton extends StatelessWidget {
+class _HeaderTextButton extends StatefulWidget {
   final String text;
 
   const _HeaderTextButton({required this.text});
 
   @override
+  State<_HeaderTextButton> createState() => _HeaderTextButtonState();
+}
+
+class _HeaderTextButtonState extends State<_HeaderTextButton> {
+  bool _isHovered = false; // 마우스 hover 상태를 저장하는 변수
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Color(0xFF123456),
-          fontWeight: FontWeight.bold,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true), // 마우스 진입 시
+      onExit: (_) => setState(() => _isHovered = false), // 마우스 나갈 시
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.text,
+              style: TextStyle(
+                fontSize: 16,
+                color: const Color(0xFF123456),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            // 하이라이트 (밑줄)
+            if (_isHovered) // hover 상태일 때만 표시
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                height: 2,
+                width: 40, // 밑줄 길이 조절 가능
+                color: const Color(0xFF123456), // 하이라이트 색상
+              ),
+          ],
         ),
       ),
     );
   }
 }
+
 
 class _HeaderButton extends StatelessWidget {
   final String text;
