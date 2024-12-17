@@ -108,6 +108,7 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           // 상단에 헤더 추가
