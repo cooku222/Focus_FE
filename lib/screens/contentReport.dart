@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:focus/utils/jwt_utils.dart'; // JWT 유틸리티 import
+import '../widgets/header.dart'; // 커스텀 헤더 위젯
 
 class FocusPieChartScreen extends StatefulWidget {
   final int sessionId;
@@ -107,31 +108,36 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Focus Pie Chart")),
-      body: Center(
-        child: isLoading
-            ? const CircularProgressIndicator()
-            : Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (decodedJWT != null) ...[
-              Text(
-                "User: ${decodedJWT!['sub'] ?? 'Unknown'}", // JWT의 sub 값 표시
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-            ],
-            const Text(
-              "Focus Distribution",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      body: Column(
+        children: [
+          // 상단에 헤더 추가
+          const Header(),
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (decodedJWT != null) ...[
+                  Text(
+                    "User: ${decodedJWT!['sub'] ?? 'Unknown'}", // JWT의 sub 값 표시
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                const Text(
+                  "Focus Distribution",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 300,
+                  child: _buildPieChart(),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 300,
-              child: _buildPieChart(),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
