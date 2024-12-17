@@ -8,6 +8,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:js/js_util.dart';
 import 'package:focus/utils/jwt_utils.dart';
 import 'package:http/http.dart' as http;
+import 'package:focus/screens/contentReport.dart';
 
 void registerWebcamView() {
   ui.platformViewRegistry.registerViewFactory(
@@ -273,7 +274,15 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                   onPressed: () {
                     _endSession();
                     _closeWebSocket();
-                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FocusPieChartScreen(
+                          sessionId: sessionId!,     // 기존 화면에서 받은 userId
+                          token: widget.token,       // 기존 화면에서 받은 token
+                        ),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
