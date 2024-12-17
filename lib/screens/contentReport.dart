@@ -20,8 +20,12 @@ class FocusPieChartScreen extends StatefulWidget {
 }
 
 class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
-  double focusRatio = 0; // 집중도 값
-  double notFocusRatio = 0; // 비집중도 값
+  double concentrationRatio0 = 0;
+  double concentrationRatio1 = 0;
+  double concentrationRatio2 = 0;
+  double concentrationRatio3 = 0;
+  double concentrationRatio4 = 0;
+
   bool isLoading = true; // 로딩 상태
   Map<String, dynamic>? decodedJWT; // 디코딩된 JWT
 
@@ -53,8 +57,11 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          focusRatio = (data['focusRatio'] ?? 0) * 100;
-          notFocusRatio = (data['notFocusRatio'] ?? 0) * 100;
+          concentrationRatio0 = (data['concentrationRatio0'] ?? 0) * 100;
+          concentrationRatio1 = (data['concentrationRatio1'] ?? 0) * 100;
+          concentrationRatio2 = (data['concentrationRatio2'] ?? 0) * 100;
+          concentrationRatio3 = (data['concentrationRatio3'] ?? 0) * 100;
+          concentrationRatio4 = (data['concentrationRatio4'] ?? 0) * 100;
           isLoading = false;
         });
       } else {
@@ -77,31 +84,85 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
       PieChartData(
         sections: [
           PieChartSectionData(
-            color: Colors.blue,
-            value: focusRatio,
-            title: "${focusRatio.toStringAsFixed(1)}%",
+            color: Colors.blue, // 파란색
+            value: concentrationRatio0,
+            title: "${concentrationRatio0.toStringAsFixed(1)}%",
             radius: 80,
-            titleStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           PieChartSectionData(
-            color: Colors.grey,
-            value: notFocusRatio,
-            title: "${notFocusRatio.toStringAsFixed(1)}%",
+            color: Colors.blue, // 파란색
+            value: concentrationRatio1,
+            title: "${concentrationRatio1.toStringAsFixed(1)}%",
             radius: 80,
-            titleStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          PieChartSectionData(
+            color: Colors.yellow, // 노란색
+            value: concentrationRatio2,
+            title: "${concentrationRatio2.toStringAsFixed(1)}%",
+            radius: 80,
+            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+          PieChartSectionData(
+            color: Colors.yellow, // 노란색
+            value: concentrationRatio3,
+            title: "${concentrationRatio3.toStringAsFixed(1)}%",
+            radius: 80,
+            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+          PieChartSectionData(
+            color: Colors.red, // 빨간색
+            value: concentrationRatio4,
+            title: "${concentrationRatio4.toStringAsFixed(1)}%",
+            radius: 80,
+            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ],
         sectionsSpace: 2,
         centerSpaceRadius: 50,
       ),
+    );
+  }
+
+  /// 색상 매칭 테이블
+  Widget _buildColorLegendTable() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0, right: 16.0),
+      child: Align(
+        alignment: Alignment.bottomRight, // 우측 하단에 위치
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "색상 매칭 테이블",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            _buildLegendRow("concentrationRatio0~1", Colors.blue, "파란색"),
+            _buildLegendRow("concentrationRatio2~3", Colors.yellow, "노란색"),
+            _buildLegendRow("concentrationRatio4", Colors.red, "빨간색"),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 개별 색상 설명 줄
+  Widget _buildLegendRow(String label, Color color, String description) {
+    return Row(
+      children: [
+        Container(
+          width: 20,
+          height: 20,
+          color: color, // 색상 블록
+        ),
+        const SizedBox(width: 8),
+        Text(
+          "$label - $description",
+          style: const TextStyle(fontSize: 14),
+        ),
+      ],
     );
   }
 
@@ -111,21 +172,13 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // 상단에 헤더 추가
-          const Header(),
+          const Header(), // 상단 헤더
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (decodedJWT != null) ...[
-                  Text(
-                    "User: ${decodedJWT!['sub'] ?? 'Unknown'}", // JWT의 sub 값 표시
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                ],
                 const Text(
                   "Focus Distribution",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -138,6 +191,7 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
               ],
             ),
           ),
+          _buildColorLegendTable(), // 색상 테이블 우측 하단에 추가
         ],
       ),
     );
