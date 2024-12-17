@@ -20,6 +20,7 @@ class FocusPieChartScreen extends StatefulWidget {
 }
 
 class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
+  String sessionName = ""; // 세션 이름 저장 변수
   double concentrationRatio0 = 0;
   double concentrationRatio1 = 0;
   double concentrationRatio2 = 0;
@@ -57,6 +58,7 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
+          sessionName = data['sessionName'] ?? "Focus Distribution"; // 기본값 설정
           concentrationRatio0 = (data['concentrationRatio0'] ?? 0) * 100;
           concentrationRatio1 = (data['concentrationRatio1'] ?? 0) * 100;
           concentrationRatio2 = (data['concentrationRatio2'] ?? 0) * 100;
@@ -86,32 +88,16 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
         sections: [
           PieChartSectionData(
             color: Colors.blue, // 파란색
-            value: concentrationRatio0,
-            title: "${concentrationRatio0.toStringAsFixed(1)}%",
-            radius: 80,
-            titleStyle: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          PieChartSectionData(
-            color: Colors.blue, // 파란색
-            value: concentrationRatio1,
-            title: "${concentrationRatio1.toStringAsFixed(1)}%",
+            value: concentrationRatio0 + concentrationRatio1,
+            title: "${(concentrationRatio0 + concentrationRatio1).toStringAsFixed(1)}%",
             radius: 80,
             titleStyle: const TextStyle(
                 fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           PieChartSectionData(
             color: Colors.yellow, // 노란색
-            value: concentrationRatio2,
-            title: "${concentrationRatio2.toStringAsFixed(1)}%",
-            radius: 80,
-            titleStyle: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
-          ),
-          PieChartSectionData(
-            color: Colors.yellow, // 노란색
-            value: concentrationRatio3,
-            title: "${concentrationRatio3.toStringAsFixed(1)}%",
+            value: concentrationRatio2 + concentrationRatio3,
+            title: "${(concentrationRatio2 + concentrationRatio3).toStringAsFixed(1)}%",
             radius: 80,
             titleStyle: const TextStyle(
                 fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
@@ -153,9 +139,9 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            _buildLegendRow("concentrationRatio0~1", Colors.blue, "파란색"),
-            _buildLegendRow("concentrationRatio2~3", Colors.yellow, "노란색"),
-            _buildLegendRow("concentrationRatio4", Colors.red, "빨간색"),
+            _buildLegendRow("집중상태", Colors.blue, "파란색"),
+            _buildLegendRow("비집중상태", Colors.yellow, "노란색"),
+            _buildLegendRow("졸음", Colors.red, "빨간색"),
           ],
         ),
       ),
@@ -193,8 +179,8 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
                 : Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  "Focus Distribution",
+                Text(
+                  sessionName,
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
