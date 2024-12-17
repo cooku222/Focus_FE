@@ -79,6 +79,7 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
   }
 
   /// 파이 차트 생성
+  /// 파이 차트 생성
   Widget _buildPieChart() {
     return PieChart(
       PieChartData(
@@ -88,41 +89,54 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
             value: concentrationRatio0,
             title: "${concentrationRatio0.toStringAsFixed(1)}%",
             radius: 80,
-            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+            titleStyle: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           PieChartSectionData(
             color: Colors.blue, // 파란색
             value: concentrationRatio1,
             title: "${concentrationRatio1.toStringAsFixed(1)}%",
             radius: 80,
-            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+            titleStyle: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           PieChartSectionData(
             color: Colors.yellow, // 노란색
             value: concentrationRatio2,
             title: "${concentrationRatio2.toStringAsFixed(1)}%",
             radius: 80,
-            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+            titleStyle: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
           ),
           PieChartSectionData(
             color: Colors.yellow, // 노란색
             value: concentrationRatio3,
             title: "${concentrationRatio3.toStringAsFixed(1)}%",
             radius: 80,
-            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+            titleStyle: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
           ),
           PieChartSectionData(
             color: Colors.red, // 빨간색
             value: concentrationRatio4,
             title: "${concentrationRatio4.toStringAsFixed(1)}%",
             radius: 80,
-            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+            titleStyle: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ],
-        sectionsSpace: 2,
+        sectionsSpace: _getSectionSpace(), // 동적으로 구분선 제거
         centerSpaceRadius: 50,
       ),
     );
+  }
+
+  /// 같은 색상 구분선 제거 로직
+  double _getSectionSpace() {
+    // 같은 색상이 있는 경우 구분선 제거
+    bool sameColors = (concentrationRatio0 > 0 && concentrationRatio1 > 0) ||
+        (concentrationRatio2 > 0 && concentrationRatio3 > 0);
+    return sameColors ? 0 : 2; // 같은 색상일 경우 0, 아니면 2
   }
 
   /// 색상 매칭 테이블
