@@ -68,7 +68,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
 
   @override
   void dispose() {
-    _endSession();
     _closeWebSocket();
     captureTimer?.cancel();
     super.dispose();
