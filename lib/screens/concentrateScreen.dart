@@ -121,6 +121,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       final response = await http.post(
         Uri.parse("http://3.38.191.196/api/video-session/end/$sessionId"),
         headers: {
+          "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}"
         },
       );
