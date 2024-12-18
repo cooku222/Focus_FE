@@ -127,11 +127,14 @@ class _WeeklyReportScreenState extends State<WeeklyReportScreen> {
               x: index,
               barRods: [
                 BarChartRodData(
-                  y: focusedTimeHours + notFocusedTimeHours,
+                  toY: focusedTimeHours + notFocusedTimeHours,
                   rodStackItems: [
                     BarChartRodStackItem(0, notFocusedTimeHours, const Color(0xFFBEBEBE)),
-                    BarChartRodStackItem(notFocusedTimeHours, focusedTimeHours + notFocusedTimeHours,
-                        const Color(0xFF0019FF)),
+                    BarChartRodStackItem(
+                      notFocusedTimeHours,
+                      focusedTimeHours + notFocusedTimeHours,
+                      const Color(0xFF0019FF),
+                    ),
                   ],
                   width: 20,
                   borderRadius: BorderRadius.zero,
@@ -140,19 +143,25 @@ class _WeeklyReportScreenState extends State<WeeklyReportScreen> {
             );
           }).toList(),
           titlesData: FlTitlesData(
-            leftTitles: SideTitles(
-              showTitles: true,
-              getTitles: (value) => '${value.toInt()}h',
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  return Text('${value.toInt()}h');
+                },
+              ),
             ),
-            bottomTitles: SideTitles(
-              showTitles: true,
-              getTitles: (value) {
-                final index = value.toInt();
-                if (index < weeklyData.length) {
-                  return weeklyData[index]['date'].split('-').last;
-                }
-                return '';
-              },
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index < weeklyData.length) {
+                    return Text(weeklyData[index]['date'].split('-').last);
+                  }
+                  return const Text('');
+                },
+              ),
             ),
           ),
           gridData: FlGridData(show: true),

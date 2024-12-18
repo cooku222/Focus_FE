@@ -8,6 +8,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:js/js_util.dart';
 import 'package:focus/utils/jwt_utils.dart';
 import 'package:http/http.dart' as http;
+import 'package:focus/screens/contentReport.dart';
 
 void registerWebcamView() {
   ui.platformViewRegistry.registerViewFactory(
@@ -50,7 +51,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
   Timer? captureTimer;
   Timer? pingTimer;
   int? sessionId;
-
+  int concentration = 0;
   bool isWebcamInitialized = false;
   bool isCapturing = false;
 
@@ -68,7 +69,6 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
 
   @override
   void dispose() {
-    _endSession();
     _closeWebSocket();
     captureTimer?.cancel();
     super.dispose();
@@ -135,7 +135,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       print("Error ending session: $e");
     }
   }
-
+  /// 웹소켓 연결
   void _connectToWebSocket() {
     final wsUrl = 'ws://3.38.191.196/image';
 
@@ -149,6 +149,18 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       webSocketChannel!.stream.listen(
             (message) {
           print("Message from server: $message");
+
+          // Parse JSON data and update concentrate value
+          try {
+            final data = jsonDecode(message);
+            if (data['concentration'] != null) {
+              setState(() {
+                concentration = data['concentration'];
+              });
+            }
+          } catch (e) {
+            print("Error parsing WebSocket message: $e");
+          }
         },
         onError: (error) {
           print("WebSocket Error: $error");
@@ -174,6 +186,19 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       setState(() {
         webSocketStatus = "Failed to connect: $e";
       });
+    }
+  }
+
+  /// concentrate 값에 따라 테두리 색상 반환
+  Color _getBorderColor() {
+    if (concentration == 0 || concentration == 1) {
+      return Colors.blue; // 0, 1 -> 빨간색
+    } else if (concentration == 2 || concentration == 3) {
+      return Colors.yellow; // 2, 3 -> 노란색
+    } else if (concentration == 4) {
+      return Colors.red; // 4 -> 회색
+    } else {
+      return Colors.transparent; // 예외 값 -> 투명
     }
   }
 
@@ -240,7 +265,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       isCapturing = true;
     });
 
-    captureTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+    captureTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _captureAndSendImage();
     });
   }
@@ -274,7 +299,15 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                   onPressed: () {
                     _endSession();
                     _closeWebSocket();
-                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FocusPieChartScreen(
+                          sessionId: sessionId!,     // 기존 화면에서 받은 userId
+                          token: widget.token,       // 기존 화면에서 받은 token
+                        ),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
@@ -293,7 +326,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(color: _getBorderColor(), width: 8),
                 ),
                 child: HtmlElementView(viewType: 'webcam-view'),
               ),
