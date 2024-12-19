@@ -56,7 +56,8 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final decodeBody = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(decodeBody);
         setState(() {
           sessionName = data['sessionName'] ?? "Focus Distribution"; // 기본값 설정
           concentrationRatio0 = (data['concentrationRatio0'] ?? 0) * 100;
@@ -81,7 +82,6 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
   }
 
   /// 파이 차트 생성
-  /// 파이 차트 생성
   Widget _buildPieChart() {
     return PieChart(
       PieChartData(
@@ -90,32 +90,33 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
             color: Colors.blue, // 파란색
             value: concentrationRatio0 + concentrationRatio1,
             title: "${(concentrationRatio0 + concentrationRatio1).toStringAsFixed(1)}%",
-            radius: 80,
+            radius: 110, // 그래프 크기 증가
             titleStyle: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white), // 글자 크기 증가
           ),
           PieChartSectionData(
             color: Colors.yellow, // 노란색
             value: concentrationRatio2 + concentrationRatio3,
             title: "${(concentrationRatio2 + concentrationRatio3).toStringAsFixed(1)}%",
-            radius: 80,
+            radius: 110, // 그래프 크기 증가
             titleStyle: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black), // 글자 크기 증가
           ),
           PieChartSectionData(
             color: Colors.red, // 빨간색
             value: concentrationRatio4,
             title: "${concentrationRatio4.toStringAsFixed(1)}%",
-            radius: 80,
+            radius: 110, // 그래프 크기 증가
             titleStyle: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white), // 글자 크기 증가
           ),
         ],
         sectionsSpace: _getSectionSpace(), // 동적으로 구분선 제거
-        centerSpaceRadius: 50,
+        centerSpaceRadius: 50, // 그래프 중심 공간 조정
       ),
     );
   }
+
 
   /// 같은 색상 구분선 제거 로직
   double _getSectionSpace() {
@@ -153,14 +154,14 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
     return Row(
       children: [
         Container(
-          width: 20,
-          height: 20,
+          width: 28, // 색상 블록 크기 증가
+          height: 28, // 색상 블록 크기 증가
           color: color, // 색상 블록
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10), // 간격 증가
         Text(
           "$label - $description",
-          style: const TextStyle(fontSize: 14),
+          style: const TextStyle(fontSize: 20), // 텍스트 크기 증가
         ),
       ],
     );
@@ -185,7 +186,7 @@ class _FocusPieChartScreenState extends State<FocusPieChartScreen> {
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
-                  height: 300,
+                  height: 310,
                   child: _buildPieChart(),
                 ),
               ],
