@@ -265,7 +265,7 @@ class _ConcentrateScreenState extends State<ConcentrateScreen> {
       isCapturing = true;
     });
 
-    captureTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+    captureTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _captureAndSendImage();
     });
   }
