@@ -73,7 +73,8 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       print("Response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List<dynamic>;
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(decodedBody) as List<dynamic>;
         final List<String> titles = data.map((item) {
           return item["title"]?.toString() ?? "Untitled";
         }).toList();
@@ -99,7 +100,7 @@ class _WaitingRoom2State extends State<WaitingRoom2> {
       final response = await http.post(
         url,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode({

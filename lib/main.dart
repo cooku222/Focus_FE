@@ -20,7 +20,8 @@ import 'package:focus/widgets/auth_guard.dart';
 import 'package:focus/widgets/header.dart';
 import 'package:focus/screens/myPage.dart';
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }
 

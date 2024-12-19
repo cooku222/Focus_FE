@@ -32,5 +32,5 @@ COPY . /app
 RUN flutter pub get
 
 # Command to run the application (default to bash)
-EXPOSE 80
+EXPOSE 81
 CMD ["bash"]

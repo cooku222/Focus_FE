@@ -1,0 +1,13 @@
+services:
+  flutter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "81:81" # Flutter 웹 앱의 포트를 매핑
+    volumes:
+      - .:/app # 프로젝트 디렉터리를 컨테이너에 마운트
+    environment:
+      - PUB_CACHE=/app/.pub-cache # 캐시 설정
+    stdin_open: true
+    tty: true

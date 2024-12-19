@@ -125,10 +125,10 @@ packages:
     dependency: "direct main"
     description:
       name: collection
-      sha256: a1ace0a119f20aabc852d165077c036cd864315bd99b7eaa10a60100341941bf
+      sha256: ee67cb0715911d28db6bf4af1026078bd6f0128b07a5f66fb2ed94ec6783c09a
       url: "https://pub.dev"
     source: hosted
-    version: "1.19.0"
+    version: "1.18.0"
   connectivity_plus:
     dependency: transitive
     description:
@@ -298,10 +298,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_plugin_android_lifecycle
-      sha256: "9b78450b89f059e96c9ebb355fa6b3df1d6b330436e0b885fb49594c41721398"
+      sha256: "615a505aef59b151b46bbeef55b36ce2b6ed299d160c51d84281946f0aa0ce0e"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.23"
+    version: "2.0.24"
   flutter_secure_storage:
     dependency: "direct main"
     description:
@@ -391,18 +391,18 @@ packages:
     dependency: transitive
     description:
       name: http_parser
-      sha256: "76d306a1c3afb33fe82e2bbacad62a61f409b5634c915fceb0d799de1a913360"
+      sha256: "2aa08ce0341cc9b354a498388e30986515406668dbcc4f7c950c3e715496693b"
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.1"
+    version: "4.0.2"
   internet_connection_checker_plus:
     dependency: transitive
     description:
       name: internet_connection_checker_plus
-      sha256: "95da3194bdb98cb606b921f0e0007cbe55c32d6a7fa92d5debe59ef4183ce2a6"
+      sha256: "41c7fb7cf648f32f7a3a7b95712d57b17e7ff6df8661d44eb80fd2cc19b96887"
       url: "https://pub.dev"
     source: hosted
-    version: "2.5.2"
+    version: "2.6.0"
   intl:
     dependency: transitive
     description:
@@ -439,10 +439,10 @@ packages:
     dependency: transitive
     description:
       name: lints
-      sha256: "4a16b3f03741e1252fda5de3ce712666d010ba2122f8e912c94f9f7b90e1a4c3"
+      sha256: "3315600f3fb3b135be672bf4a178c55f274bebe368325ae18462c89ac1e3b413"
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.0"
+    version: "5.0.0"
   logging:
     dependency: transitive
     description:
@@ -703,7 +703,7 @@ packages:
     dependency: transitive
     description: flutter
     source: sdk
-    version: "0.0.0"
+    version: "0.0.99"
   source_span:
     dependency: transitive
     description:
@@ -788,10 +788,10 @@ packages:
     dependency: transitive
     description:
       name: stream_transform
-      sha256: "14a00e794c7c11aa145a170587321aedce29769c08d7f58b1d141da75e3b1c6f"
+      sha256: ad47125e588cfd37a9a7f86c7d6356dde8dfe89d071d293f80ca9e9273a33871
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.1.1"
   stream_video:
     dependency: "direct main"
     description:
@@ -812,10 +812,10 @@ packages:
     dependency: transitive
     description:
       name: string_scanner
-      sha256: "0bd04f5bb74fcd6ff0606a888a30e917af9bd52820b178eaa464beb11dca84b6"
+      sha256: "921cd31725b72fe181906c6a94d987c78e3b98c2e205b397ea399d4054872b43"
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.0"
+    version: "1.4.1"
   synchronized:
     dependency: transitive
     description:
@@ -852,10 +852,10 @@ packages:
     dependency: transitive
     description:
       name: term_glyph
-      sha256: a29248a84fbb7c79282b40b8c72a1209db169a2e0542bce341da992fe1bc7e84
+      sha256: "7f554798625ea768a7518313e58f83891c7f5024f88e46e7182a4558850a4b8e"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.1"
+    version: "1.2.2"
   test_api:
     dependency: transitive
     description:
@@ -1017,5 +1017,5 @@ packages:
     source: hosted
     version: "6.5.0"
 sdks:
-  dart: ">=3.6.0-0 <4.0.0"
+  dart: ">=3.5.3 <4.0.0"
   flutter: ">=3.24.0"
