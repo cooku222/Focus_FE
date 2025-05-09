@@ -1,18 +1,3 @@
+## Focus
 
-# focus
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
->>>>>>> ae6816d (Initial commit)
+- 현대인들의 집중력 문제를 개선하기 위해 공부하는 동안 집중도를 실시간으로 측정해주는 웹/앱 서비스
